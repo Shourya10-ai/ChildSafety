@@ -721,6 +721,150 @@ All routes are prefixed with: /api/v1/
   POST /api/v1/dpdp/run-retention-sweep  (Roles: moderator, admin)
     Dual-track retention purge: purges operational logs older than 90 days while preserving 7-year statutory evidence.
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14. PHASE 10: KNOWLEDGE GRAPH, CONNECT-THE-DOTS & PREDICTIVE RISK ENGINE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  A. KNOWLEDGE GRAPH & CROSS-CASE INTELLIGENCE:
+  ─────────────────────────────────────────────────────────────────────────────
+  GET /api/v1/graph/case/{case_id}  (Roles: moderator, authority, admin)
+    Returns interactive multi-hop ego-graph for a case:
+    Response: {
+      "case_id": "uuid",
+      "nodes": [
+        { "id": "uuid", "label": "Case CS-...", "type": "CASE", "properties": { ... } },
+        { "id": "uuid", "label": "Incident: grooming", "type": "INCIDENT", "properties": { ... } },
+        { "id": "uuid", "label": "@predator_shadow", "type": "SUSPECT", "properties": { "platform": "Instagram", "risk_level": "CRITICAL" } }
+      ],
+      "edges": [
+        { "id": "edge-1", "source": "case-uuid", "target": "incident-uuid", "relation": "CONTAINS_INCIDENT", "label": "CONTAINS" },
+        { "id": "edge-2", "source": "incident-uuid", "target": "suspect-uuid", "relation": "IDENTIFIED_SUSPECT", "label": "SUSPECT_LINK" }
+      ],
+      "generated_at": "2026-09-12T..."
+    }
+
+  GET /api/v1/graph/connect-the-dots  (Roles: moderator, authority, admin)
+    Cross-jurisdiction discovery engine:
+    Params: ?suspect_identifier=@predator_shadow (or ?phone=...)
+    Response: {
+      "suspect": {
+        "id": "uuid",
+        "identifier": "@predator_shadow",
+        "identifier_type": "HANDLE",
+        "platform": "Instagram",
+        "risk_level": "CRITICAL"
+      },
+      "linked_cases": [ ... ],
+      "linked_incidents": [ ... ],
+      "victim_children": [ ... ],
+      "associated_jurisdictions": ["Delhi", "Goa"],
+      "total_victims_count": 2,
+      "graph_data": { "nodes": [ ... ], "edges": [ ... ] }
+    }
+
+  GET /api/v1/graph/clusters  (Roles: moderator, authority, admin)
+    Detects high-priority predatory clusters where suspects operate across multiple cases/victims.
+    Response: {
+      "clusters": [
+        {
+          "suspect_id": "uuid",
+          "suspect_identifier": "@predator_shadow",
+          "platform": "Instagram",
+          "linked_case_ids": [ ... ],
+          "victim_child_ids": [ ... ],
+          "jurisdictions": ["Delhi", "Goa"],
+          "distinct_victims_count": 2
+        }
+      ],
+      "total_clusters_found": 1
+    }
+
+  GET /api/v1/graph/stats
+    Global safety knowledge graph statistics:
+    Response: {
+      "total_nodes": 45,
+      "total_edges": 62,
+      "cases_count": 12,
+      "suspects_count": 5,
+      "multi_victim_predators_count": 2,
+      "generated_at": "2026-09-12T..."
+    }
+
+  POST /api/v1/graph/link-suspect  (Roles: moderator, authority, admin)
+    Links a suspect handle/phone to an incident:
+    Body: {
+      "incident_id": "uuid",
+      "identifier": "@predator_shadow",
+      "identifier_type": "HANDLE" | "PHONE" | "EMAIL" | "ACCOUNT_ID",
+      "platform": "Instagram" | "Telegram" | "Discord" | "WhatsApp",
+      "modus_operandi": "Demanded private photos in exchange for gaming currency",
+      "confidence_score": 0.95
+    }
+
+  B. CASE SIMILARITY ENGINE:
+  ─────────────────────────────────────────────────────────────────────────────
+  POST /api/v1/risk/case/{case_id}/similar  (Roles: moderator, authority, admin)
+    Calculates 3-factor composite similarity (Tactics 40%, Suspects 35%, Spatio-Temporal 25%):
+    Response: {
+      "source_case_id": "uuid",
+      "top_matches": [
+        {
+          "target_case_id": "uuid",
+          "protected_case_id": "CS-2026-2002",
+          "similarity_score": 0.488,
+          "match_reasons": [
+            "Identical suspect identifier: @predator_shadow",
+            "Similar incident category: Grooming",
+            "Occurred within 0 days"
+          ],
+          "shared_suspects": ["@predator_shadow"],
+          "jurisdiction": "Goa, North Goa"
+        }
+      ],
+      "evaluated_at": "2026-09-12T..."
+    }
+
+  C. PREDICTIVE MULTI-FACTOR RISK ENGINE:
+  ─────────────────────────────────────────────────────────────────────────────
+  GET /api/v1/risk/case/{case_id}  (Roles: moderator, authority, admin)
+    Evaluates incident velocity, severity, predator persistence, and child vulnerability:
+    Response: {
+      "target_type": "CASE",
+      "target_id": "uuid",
+      "protected_id": "CS-2026-1001",
+      "composite_risk_score": 0.865,
+      "threat_tier": "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
+      "factors": {
+        "velocity_score": 0.70,
+        "severity_score": 1.00,
+        "predator_persistence_score": 0.85,
+        "vulnerability_score": 0.80
+      },
+      "statutory_citations": [
+        {
+          "act": "POCSO Act 2012",
+          "section": "Section 19",
+          "provision": "Mandatory Reporting of Child Sexual Exploitation Offenses",
+          "mandatory_action": "Flag for immediate mandatory Special Juvenile Police Unit (SJPU) transmission."
+        },
+        {
+          "act": "POCSO Act 2012",
+          "section": "Section 11",
+          "provision": "Sexual Harassment / Online Grooming of a Minor",
+          "mandatory_action": "Formal statutory tagging in case file and SJPU docket."
+        }
+      ],
+      "recommended_interventions": [
+        "URGENT ESCALATION: 15-minute emergency moderator response protocol active",
+        "Flag for immediate mandatory Special Juvenile Police Unit (SJPU) transmission"
+      ],
+      "evaluated_at": "2026-09-12T..."
+    }
+
+  GET /api/v1/risk/child/{child_id}  (Roles: child, adult, moderator, authority, admin)
+    Cumulative profile risk assessment across all active cases for child.
+    Returns the same RiskEvaluationResponse schema.
+
 ================================================================================
   END OF BACKEND CONNECTIVITY CONTEXT
   Full interactive API docs: https://squishier-clunky-neuter.ngrok-free.dev/docs
