@@ -12,7 +12,8 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChildSettingsScreen(
-    onExitChildMode: () -> Unit
+    onExitChildMode: () -> Unit,
+    onQuickStealthExit: () -> Unit = onExitChildMode
 ) {
     var selectedLanguage by remember { mutableStateOf("English") }
     val languages = listOf("English", "Hindi")
@@ -107,7 +108,7 @@ fun ChildSettingsScreen(
 
         // Stealth / Decoy Quick Exit
         OutlinedButton(
-            onClick = onExitChildMode,
+            onClick = onQuickStealthExit,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
         ) {

@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
@@ -296,5 +297,24 @@ async def transition_case_status(
     case.status = to_status.value
     await db.commit()
     await db.refresh(case)
+
+    # Broadcast live status change over WebSocket
+    try:
+        from app.core.websocket_manager import ws_manager
+        ws_event = {
+            "event": "CASE_STATUS_CHANGED",
+            "case_id": str(case.id),
+            "protected_case_id": case.protected_case_id,
+            "from_status": current_status,
+            "to_status": to_status.value,
+            "reason": reason,
+            "actor_role": actor_role,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        await ws_manager.publish_event(redis_client=None, channel="cs:role:moderator", event_data=ws_event)
+        await ws_manager.publish_event(redis_client=None, channel="cs:broadcast", event_data=ws_event)
+    except Exception:
+        pass
+
     return case
 

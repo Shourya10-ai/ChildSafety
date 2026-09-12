@@ -84,6 +84,9 @@ class WebSocketManager:
         # Also fan out locally in case Redis pubsub isn't running in a multi-node cluster
         if channel == "cs:emergency":
             await self.broadcast(event_data)
+        elif channel.startswith("cs:role:"):
+            target_role = channel.replace("cs:role:", "")
+            await self.broadcast_to_role(event_data, target_role)
         elif channel.startswith("cs:user:"):
             target_uid = channel.replace("cs:user:", "")
             await self.send_personal_message(event_data, target_uid)

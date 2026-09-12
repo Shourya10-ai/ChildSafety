@@ -15,6 +15,7 @@ import com.childsafety.app.ui.mode.ModeSelectionScreen
 import com.childsafety.app.ui.child.*
 import com.childsafety.app.ui.adult.*
 import com.childsafety.app.ui.shared.SharedHomeScreen
+import com.childsafety.app.ui.stealth.DecoyCalculatorScreen
 import com.childsafety.app.ui.common.AppBottomNav
 import com.childsafety.app.ui.common.AppTopBar
 import com.childsafety.app.ui.common.NavItems
@@ -24,6 +25,7 @@ object Routes {
     const val LOGIN = "login"
     const val REGISTER = "register"
     const val MODE_SELECTION = "mode_selection"
+    const val DECOY_CALCULATOR = "decoy_calculator"
 
     const val CHILD_HOME = "child_home"
     const val CHILD_REPORT = "child_report"
@@ -49,7 +51,8 @@ fun AppNavGraph(startDestination: String = Routes.WELCOME) {
         Routes.WELCOME,
         Routes.LOGIN,
         Routes.REGISTER,
-        Routes.MODE_SELECTION
+        Routes.MODE_SELECTION,
+        Routes.DECOY_CALCULATOR
     )
 
     val isChildMode = currentRoute?.startsWith("child") == true
@@ -73,6 +76,11 @@ fun AppNavGraph(startDestination: String = Routes.WELCOME) {
                             navController.navigate(Routes.CHILD_SETTINGS)
                         } else {
                             navController.navigate(Routes.MODE_SELECTION)
+                        }
+                    },
+                    onQuickExitClick = {
+                        navController.navigate(Routes.DECOY_CALCULATOR) {
+                            popUpTo(0) { inclusive = true }
                         }
                     }
                 )
@@ -182,6 +190,20 @@ fun AppNavGraph(startDestination: String = Routes.WELCOME) {
                     onExitChildMode = {
                         navController.navigate(Routes.MODE_SELECTION) {
                             popUpTo(Routes.CHILD_HOME) { inclusive = true }
+                        }
+                    },
+                    onQuickStealthExit = {
+                        navController.navigate(Routes.DECOY_CALCULATOR) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
+            }
+            composable(Routes.DECOY_CALCULATOR) {
+                DecoyCalculatorScreen(
+                    onUnlock = {
+                        navController.navigate(Routes.MODE_SELECTION) {
+                            popUpTo(Routes.DECOY_CALCULATOR) { inclusive = true }
                         }
                     }
                 )

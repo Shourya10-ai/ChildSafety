@@ -11,13 +11,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+import androidx.compose.material.icons.filled.Close
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppTopBar(
     title: String,
     mode: String? = null,
     onBackClick: (() -> Unit)? = null,
-    onSettingsClick: (() -> Unit)? = null
+    onSettingsClick: (() -> Unit)? = null,
+    onQuickExitClick: (() -> Unit)? = null
 ) {
     TopAppBar(
         title = {
@@ -42,6 +45,15 @@ fun AppTopBar(
             if (onSettingsClick != null) {
                 IconButton(onClick = onSettingsClick) {
                     Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings")
+                }
+            }
+            if (onQuickExitClick != null) {
+                IconButton(onClick = onQuickExitClick) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Quick Stealth Decoy Exit",
+                        tint = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         },

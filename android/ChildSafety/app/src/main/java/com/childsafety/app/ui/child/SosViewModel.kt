@@ -126,6 +126,42 @@ class SosViewModel @Inject constructor(
         }
     }
 
+    fun triggerSilentDuressSos(onSuccess: (() -> Unit)? = null) {
+        viewModelScope.launch {
+            val (lat, lng) = getCurrentLocation()
+            try {
+                val req = TriggerSosRequest(
+                    latitude = lat,
+                    longitude = lng,
+                    accuracy = 10.0f,
+                    locationAddress = "Discreet duress alert from mobile device",
+                    message = "🚨 SILENT DURESS EMERGENCY: Discreet duress trigger activated",
+                    isSilentDuress = true,
+                    bypassPrimaryGuardians = true
+                )
+                val response = sosApi.triggerSos(req)
+                if (response.isSuccessful && response.body() != null) {
+                    _activeSos.value = response.body()
+                    onSuccess?.invoke()
+                }
+            } catch (e: Exception) {
+                try {
+                    offlineQueueDao.insertQueuedSos(
+                        QueuedSosEntity(
+                            childId = null,
+                            latitude = lat,
+                            longitude = lng,
+                            accuracy = 10.0f,
+                            message = "🚨 SILENT DURESS: Queued offline alert"
+                        )
+                    )
+                    OfflineSyncWorker.enqueueSync(getApplication())
+                    onSuccess?.invoke()
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
     fun resolveSos(reason: String = "Resolved by child - Safe now") {
         val current = _activeSos.value ?: return
         viewModelScope.launch {

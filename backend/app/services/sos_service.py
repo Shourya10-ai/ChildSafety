@@ -147,6 +147,29 @@ async def trigger_sos(
     await db.commit()
     await db.refresh(sos_event)
 
+    # Broadcast live WebSocket event to emergency and moderator channels
+    try:
+        from app.core.websocket_manager import ws_manager
+        ws_event = {
+            "event": "SOS_TRIGGERED",
+            "sos_id": str(sos_event.id),
+            "child_id": str(child.id),
+            "child_name": child.display_name,
+            "protected_child_id": child.protected_child_id,
+            "case_id": str(case.id),
+            "protected_case_id": case.protected_case_id,
+            "latitude": sos_event.latitude,
+            "longitude": sos_event.longitude,
+            "location_address": sos_event.location_address,
+            "is_silent_duress": sos_event.is_silent_duress,
+            "routed_to_alternate_adults_only": sos_event.routed_to_alternate_adults_only,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        await ws_manager.publish_event(redis_client=None, channel="cs:emergency", event_data=ws_event)
+        await ws_manager.publish_event(redis_client=None, channel="cs:role:moderator", event_data=ws_event)
+    except Exception:
+        pass
+
     return SOSEventOut(
         id=sos_event.id,
         child_id=child.id,
@@ -195,6 +218,23 @@ async def resolve_sos(
     # Get case info
     case_res = await db.execute(select(Case).where(Case.id == sos_event.case_id))
     case = case_res.scalar_one_or_none()
+
+    # Broadcast resolution event over WebSocket
+    try:
+        from app.core.websocket_manager import ws_manager
+        ws_event = {
+            "event": "SOS_RESOLVED",
+            "sos_id": str(sos_event.id),
+            "case_id": str(sos_event.case_id) if sos_event.case_id else None,
+            "protected_case_id": case.protected_case_id if case else None,
+            "child_name": child.display_name if child else "Child",
+            "status": "resolved",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        await ws_manager.publish_event(redis_client=None, channel="cs:emergency", event_data=ws_event)
+        await ws_manager.publish_event(redis_client=None, channel="cs:role:moderator", event_data=ws_event)
+    except Exception:
+        pass
 
     return SOSEventOut(
         id=sos_event.id,

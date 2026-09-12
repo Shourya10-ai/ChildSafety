@@ -32,3 +32,16 @@ async def mark_notification_read(db: AsyncSession, notification_id: uuid.UUID, u
         await db.commit()
         return True
     return False
+
+async def mark_all_notifications_read(db: AsyncSession, user_id: uuid.UUID) -> int:
+    res = await db.execute(
+        select(Notification).where(and_(Notification.user_id == user_id, Notification.is_read == False))
+    )
+    unreads = res.scalars().all()
+    count = len(unreads)
+    for n in unreads:
+        n.is_read = True
+        n.read_at = datetime.now(timezone.utc)
+    if count > 0:
+        await db.commit()
+    return count
