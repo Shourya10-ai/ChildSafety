@@ -39,5 +39,11 @@ class AdultChildLink(Base):
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     linked_at: Mapped[datetime] = mapped_column(DateTime)
+    is_alternate_trusted_adult: Mapped[bool] = mapped_column(Boolean, default=False)
+    nomination_status: Mapped[str] = mapped_column(String(30), default="APPROVED")
+    relationship_label: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    vetted_by_moderator_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    vetted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    vetting_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     __table_args__ = (UniqueConstraint('adult_id', 'child_id', name='uq_adult_child'),)

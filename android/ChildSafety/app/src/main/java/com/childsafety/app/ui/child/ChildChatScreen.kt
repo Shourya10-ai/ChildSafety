@@ -23,7 +23,21 @@ fun ChildChatScreen() {
         Pair("Hello! I am your safety helper. How can I help you today?", false)
     )) }
 
-    val suggestions = listOf("Someone is bullying me", "I saw something scary", "How do I report?")
+    val suggestions = listOf(
+        "Someone asking for photos",
+        "Told to keep a secret",
+        "Wants to move to WhatsApp",
+        "Someone bullying me",
+        "I feel unsafe at home"
+    )
+
+    val botResponses = mapOf(
+        "Someone asking for photos" to "🚨 Never send photos you aren't comfortable with. Under Indian law (POCSO Act), asking children for photos is illegal. Would you like to file a confidential report with our child protectors?",
+        "Told to keep a secret" to "🛡️ Real friends and safe adults will NEVER ask you to keep secrets from the people who love and protect you. If someone says 'kisi ko mat batana', tell a trusted adult immediately.",
+        "Wants to move to WhatsApp" to "⚠️ Moving from a game or social app to private messaging is a common tactic used to isolate kids. Stay on monitored channels and do not share your private phone number.",
+        "Someone bullying me" to "💪 Nobody has the right to bully, insult, or threaten to leak your messages. You are not alone. Take screenshots of the messages and submit a report here.",
+        "I feel unsafe at home" to "💛 If you are facing harm or abuse at home, you can nominate a Trusted Adult (like an aunt or teacher) in Settings who will receive your alerts safely, or press the discreet Duress SOS."
+    )
 
     Column(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -60,7 +74,8 @@ fun ChildChatScreen() {
                 SuggestionChip(
                     onClick = {
                         messages = messages + Pair(suggestion, true)
-                        messages = messages + Pair("I'm here to help. Can you tell me more?", false)
+                        val reply = botResponses[suggestion] ?: "I'm here to help. Can you tell me more about what happened?"
+                        messages = messages + Pair(reply, false)
                     },
                     label = { Text(suggestion) }
                 )
@@ -77,16 +92,29 @@ fun ChildChatScreen() {
                 value = message,
                 onValueChange = { message = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Type a message...") },
+                placeholder = { Text("Type a message or question...") },
                 shape = RoundedCornerShape(24.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             IconButton(
                 onClick = {
                     if (message.isNotBlank()) {
-                        messages = messages + Pair(message, true)
+                        val userText = message
+                        messages = messages + Pair(userText, true)
                         message = ""
-                        messages = messages + Pair("Thank you for sharing. We are here for you.", false)
+
+                        val lower = userText.lowercase()
+                        val response = when {
+                            lower.contains("secret") || lower.contains("batana") || lower.contains("mat bata") ->
+                                "🚨 If someone asked you to keep a secret, please tell a trusted adult or submit a report. We are here to keep you safe!"
+                            lower.contains("photo") || lower.contains("pic") || lower.contains("clothes") ->
+                                "⚠️ Warning: Never share personal photos online. If anyone asks for photos, you can block them and file a report right now."
+                            lower.contains("whatsapp") || lower.contains("number") ->
+                                "🔒 Protect your privacy! Avoid sharing your phone number or moving conversations to private messaging apps."
+                            else ->
+                                "Thank you for sharing with me. You are safe here. If you need urgent help, tap the SOS button or report an incident."
+                        }
+                        messages = messages + Pair(response, false)
                     }
                 },
                 modifier = Modifier

@@ -10,7 +10,9 @@ data class TriggerSosRequest(
     @Json(name = "longitude") val longitude: Double,
     @Json(name = "accuracy") val accuracy: Float? = null,
     @Json(name = "location_address") val locationAddress: String? = null,
-    @Json(name = "message") val message: String? = null
+    @Json(name = "message") val message: String? = null,
+    @Json(name = "is_silent_duress") val isSilentDuress: Boolean = false,
+    @Json(name = "bypass_primary_guardians") val bypassPrimaryGuardians: Boolean = false
 )
 
 @JsonClass(generateAdapter = true)
@@ -32,6 +34,8 @@ data class SosEventResponse(
     @Json(name = "message") val message: String?,
     @Json(name = "child_name") val childName: String?,
     @Json(name = "protected_child_id") val protectedChildId: String?,
+    @Json(name = "is_silent_duress") val isSilentDuress: Boolean = false,
+    @Json(name = "routed_to_alternate_adults_only") val routedToAlternateAdultsOnly: Boolean = false,
     @Json(name = "notified_guardians_count") val notifiedGuardiansCount: Int = 0,
     @Json(name = "created_at") val createdAt: String,
     @Json(name = "resolved_at") val resolvedAt: String? = null

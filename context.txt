@@ -429,17 +429,18 @@ Phase 6: SOS & Emergency System
   - Android: SOS foreground service, countdown, GPS
   - Adult: Emergency map with child location
   NEEDS: Google Maps API key
-  STATUS: NOT STARTED
+  STATUS: ✅ COMPLETE
 
-Phase 7: AI Pipeline — NLP Safety Detection
-  - AI server with model loading infrastructure
-  - Cyberbullying detection (XLM-R/MuRIL)
-  - Threat detection (severity + context)
-  - Grooming-risk detection (conversation patterns)
-  - Language detection (Indian languages + code-mixed)
-  - Backend integration: auto-flag reports, notify moderators
-  NEEDS: GPU vs CPU decision, HuggingFace token (if gated models)
-  STATUS: NOT STARTED
+Phase 7: AI Safety Pipeline (Cyberbullying, Grooming & Content Moderation)
+  - Multi-stage NLP Safety Pipeline (English + Hinglish Vernacular)
+  - Secrecy demands, photo solicitation, and channel migration heuristics
+  - Composite Risk Engine ([0.0 - 1.0]) with Indian statutory tagging (POCSO Act, BNS 2023, CWC)
+  - Concept-Drift Monitor tracking OOV slang, population divergence, active learning queues
+  - Statutory Legal RAG Copilot with strict citation grounding
+  - Trusted-Adult Nomination Engine (bypassing abusive household guardians in domestic duress)
+  - SLA Auto-Escalation & Workload Enforcer (15-min SOS SLA, 2-hr grooming SLA)
+  - Android UI: Proactive chat advice chips, nomination dialog, and decoy exit
+  STATUS: ✅ COMPLETE
 
 Phase 8: Notifications & Real-time Communication
   - Firebase Cloud Messaging (push notifications)
@@ -773,7 +774,62 @@ SECTION 14: PROGRESS LOG
              Automated Verification:
              - backend/tests/test_architecture_guardrails.py passing 100%.
 
-              Next: Phase 7 — AI Safety Pipeline: Cyberbullying, Grooming & Content Moderation
+[2026-09-12] PHASE 7 COMPLETE — AI Safety Pipeline: Cyberbullying, Grooming & Content Moderation
+             AI Server:
+             - Multi-Stage NLP Safety Pipeline (app/pipelines/nlp/nlp_safety_pipeline.py):
+               * Hinglish & English language detection and transliteration awareness.
+               * High-precision pattern matching for predatory secrecy demands ("kisi ko mat batana", "parents ko mat bolna", "delete chat").
+               * Channel migration cues ("switch to whatsapp", "insta id do", "private me baat karein").
+               * Photo solicitation and boundary-testing detection ("send pic without clothes", "ghar pe akele ho").
+               * Cyberbullying slurs & extortion intimidation ("leak your photos", "viral kar dunga").
+               * Acute self-harm & suicide ideation cues.
+               * Normalized multi-label probabilities and trigger array generation.
+             - Composite Risk Engine (app/risk_engine/risk_scorer.py):
+               * Computes unified severity score [0.0 - 1.0] and discrete risk levels (LOW, MEDIUM, HIGH, CRITICAL).
+               * Automatic Indian statutory action tagging: POCSO Act Section 11 & 12, Bharatiya Nyaya Sanhita 2023 Section 78, 79 & 351, CWC Immediate Care & Protection.
+               * Requires human moderator review gate for all MEDIUM/HIGH/CRITICAL items.
+             - Concept-Drift Monitor & Active Learning Buffer (app/pipelines/nlp/drift_monitor.py):
+               * Real-time tracking of out-of-vocabulary (OOV) slang frequency.
+               * Category population divergence and Jensen-Shannon drift score.
+               * Active learning candidate queue for human annotation of boundary edge-cases.
+               * Slang registration endpoint (/api/v1/analyze/register-slang).
+             - Tightly Grounded Statutory Legal RAG (app/rag/statutory_rag.py & app/api/rag.py):
+               * Direct citation retrieval for POCSO, BNS 2023, IT Act, and mandatory reporting timelines.
+             - AI API Endpoints (FastAPI):
+               * POST /api/v1/analyze/text: Individual text safety analysis with risk scoring & drift indicators.
+               * POST /api/v1/analyze/batch: Batch conversation audit.
+               * GET /api/v1/analyze/drift-metrics: Real-time drift & slang statistics.
+               * GET /api/v1/analyze/active-learning-samples: High-uncertainty queue for active learning.
+               * POST /api/v1/rag/guidance: Grounded legal co-pilot assistance.
+             - Automated AI Tests:
+               * ai_server/tests/test_safety_nlp_pipeline.py passing 100% (6/6 tests).
+
+             Backend:
+             - Trusted-Adult Nomination Engine (Bypassing Abusive Household Guardians):
+               * models/child.py: Extended AdultChildLink with is_alternate_trusted_adult, nomination_status, relationship_label, vetted_by_moderator_id, vetted_at, vetting_notes.
+               * schemas/nomination.py: NominateAdultRequest, ReviewNominationRequest, TrustedAdultResponse.
+               * child_service: nominate_trusted_adult, review_trusted_adult_nomination, get_trusted_adults_for_child.
+               * api/v1/children.py: POST /{id}/nominate-adult, PUT /{id}/nominate-adult/{link_id}/review, GET /{id}/trusted-adults.
+               * Confidential Duress Routing in sos_service: When is_silent_duress or bypass_primary_guardians is set, alerts strictly bypass primary household guardians and route exclusively to vetted alternate trusted adults and assigned moderators.
+             - SLA Auto-Escalation & Workload Enforcer:
+               * models/case.py: Added sla_deadline, sla_breached, sla_tier, and escalation_level.
+               * services/sla_service: Strict SLAs (15-min SOS, 2-hr critical grooming, 6-hr high risk, 24-hr standard).
+               * check_and_enforce_case_slas: Auto-detects breached deadlines, increments escalation level, logs system ModeratorNote, and reassigns delinquent cases to available supervisors with lowest caseload.
+               * api/v1/cases.py: POST /api/v1/cases/check-sla.
+             - Automated Backend Tests:
+               * backend/tests/test_trusted_adult_and_sla.py passing 100% (Nomination, Moderator Vetting, Duress Bypass, SLA Reassignment).
+               * Regression test suite passing 100% (Guardrails, Auth, Case/Incident, SOS).
+
+             Android:
+             - Models & API:
+               * SosModels.kt: Added is_silent_duress and bypass_primary_guardians.
+               * ChildModels.kt: Added NominateAdultRequest, NominateAdultResponse, TrustedAdultItem.
+               * ChildApi.kt: Added nominateTrustedAdult and getTrustedAdults endpoints.
+             - UI Screens:
+               * ChildChatScreen.kt: Proactive safety advice chips ("Someone asking for photos", "Told to keep a secret", "Wants to move to WhatsApp", "Someone bullying me", "I feel unsafe at home"), automated guidance responses, and real-time input trigger warnings.
+               * ChildSettingsScreen.kt: Added "Nominated Trusted Adults" card explaining confidential outside protection, interactive nomination dialog with relationship & reason fields, and Quick Stealth Decoy Exit button.
+
+             Next: Phase 8 — Notifications, WebSockets & Real-time Communication
 
 ================================================================================
 SECTION 15: ADVANCED SPECIALIZED SAFETY CAPABILITIES (APPROVED ARCHITECTURE)

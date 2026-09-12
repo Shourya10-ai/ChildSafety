@@ -4,7 +4,8 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 
 class ReportCreate(BaseModel):
-    content: str
+    content: Optional[str] = None
+    details: Optional[str] = None
     category: str = "other"  # cyberbullying, inappropriate_content, stranger_danger, feeling_unsafe
     platform: Optional[str] = None  # WhatsApp, Instagram, Snapchat, School, Other
     is_anonymous: bool = True

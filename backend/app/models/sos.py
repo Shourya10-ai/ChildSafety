@@ -1,7 +1,7 @@
 from __future__ import annotations
 import uuid
 from datetime import datetime
-from sqlalchemy import String, ForeignKey, Text, Float, DateTime, text, Column
+from sqlalchemy import String, ForeignKey, Text, Float, DateTime, Boolean, text, Column
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.types import TypeDecorator
@@ -37,5 +37,7 @@ class SOSEvent(Base, TimestampMixin):
     location_address: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(30), default="active")  # active, resolved, false_alarm
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_silent_duress: Mapped[bool] = mapped_column(Boolean, default=False)
+    routed_to_alternate_adults_only: Mapped[bool] = mapped_column(Boolean, default=False)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     resolved_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

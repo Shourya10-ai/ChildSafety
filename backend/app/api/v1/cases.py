@@ -9,6 +9,7 @@ from app.schemas.case import CaseCreate, CaseUpdate, CaseOut, CaseDetailOut, Cas
 from app.schemas.moderator import ModeratorNoteCreate, ModeratorNoteOut, EscalationCreate, EscalationOut
 from app.services import case_service
 from app.services import incident_service
+from app.services import sla_service
 from sqlalchemy import select
 
 router = APIRouter()
@@ -170,4 +171,14 @@ async def transition_case(
         statutory_reference=data.statutory_reference,
         dismissal_category=data.dismissal_category
     )
+
+@router.post("/check-sla")
+async def trigger_sla_enforcement(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles("moderator", "admin", "authority"))
+):
+    """
+    Enforces SLAs across all active cases, auto-escalating and reassigning delinquent cases.
+    """
+    return await sla_service.check_and_enforce_case_slas(db)
 

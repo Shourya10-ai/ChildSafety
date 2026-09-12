@@ -19,6 +19,10 @@ class Case(Base, TimestampMixin, SoftDeleteMixin):
     risk_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    sla_deadline: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    sla_breached: Mapped[bool] = mapped_column(Boolean, default=False)
+    sla_tier: Mapped[str | None] = mapped_column(String(30), default="STANDARD")
+    escalation_level: Mapped[int] = mapped_column(Integer, default=0)
 
 class Incident(Base, TimestampMixin):
     __tablename__ = "incidents"

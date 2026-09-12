@@ -7,6 +7,7 @@ from app.core.dependencies import get_db, get_current_user, get_current_active_u
 from app.models.user import User
 from app.schemas.child import ChildCreate, ChildUpdate, ChildOut, LinkChildRequest, ChildLinkOut
 from app.schemas.adult import AdultOut
+from app.schemas.nomination import NominateAdultRequest, ReviewNominationRequest, TrustedAdultResponse
 from app.services import child_service, adult_service
 
 router = APIRouter(prefix="/children", tags=["Child Management"])
@@ -110,3 +111,77 @@ async def get_linked_adults(
         return await child_service.get_adults_for_child(db, child_id)
         
     raise HTTPException(status_code=403, detail="Not authorized to view adults for this child")
+
+@router.post("/{child_id}/nominate-adult")
+async def nominate_trusted_adult(
+    child_id: uuid.UUID,
+    data: NominateAdultRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    child = await child_service.get_child_by_id(db, child_id)
+    if not child:
+        raise HTTPException(status_code=404, detail="Child not found")
+
+    # Only the child themselves or a moderator can nominate an alternate protector
+    if current_user.id != child.user_id and current_user.role not in ["moderator", "admin"]:
+        raise HTTPException(status_code=403, detail="Only the child or a safety moderator can nominate a trusted adult")
+
+    link = await child_service.nominate_trusted_adult(
+        db=db,
+        child_id=child_id,
+        adult_identifier=data.adult_identifier,
+        relationship_label=data.relationship_label,
+        reason=data.reason
+    )
+    return {
+        "message": "Trusted adult nominated successfully. Pending safety moderator vetting.",
+        "link_id": link.id,
+        "nomination_status": link.nomination_status,
+        "relationship_label": link.relationship_label
+    }
+
+@router.put("/{child_id}/nominate-adult/{link_id}/review")
+async def review_trusted_adult(
+    child_id: uuid.UUID,
+    link_id: uuid.UUID,
+    data: ReviewNominationRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    # Only moderators or admins can review nominations
+    if current_user.role not in ["moderator", "admin"]:
+        raise HTTPException(status_code=403, detail="Only safety moderators can review trusted adult nominations")
+
+    link = await child_service.review_trusted_adult_nomination(
+        db=db,
+        link_id=link_id,
+        moderator_id=current_user.id,
+        approved=data.approved,
+        vetting_notes=data.vetting_notes
+    )
+    return {
+        "message": f"Nomination {'approved' if data.approved else 'rejected'} successfully",
+        "link_id": link.id,
+        "nomination_status": link.nomination_status,
+        "is_verified": link.is_verified,
+        "vetted_at": link.vetted_at
+    }
+
+@router.get("/{child_id}/trusted-adults", response_model=List[TrustedAdultResponse])
+async def list_trusted_adults(
+    child_id: uuid.UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    child = await child_service.get_child_by_id(db, child_id)
+    if not child:
+        raise HTTPException(status_code=404, detail="Child not found")
+
+    if current_user.id != child.user_id and current_user.role not in ["moderator", "authority", "admin"]:
+        # Verify if current user is an authorized linked adult
+        adult = await adult_service.get_adult_by_user_id(db, current_user.id)
+        if not adult:
+            raise HTTPException(status_code=403, detail="Not authorized to inspect trusted adults for this child")
+
+    return await child_service.get_trusted_adults_for_child(db, child_id)

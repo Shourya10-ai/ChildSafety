@@ -1,10 +1,17 @@
 import re
 from typing import List, Dict, Any, Optional
-from ai_server.app.rag.schemas import (
-    StatutoryCitation,
-    ModeratorGuidanceQuery,
-    ModeratorGuidanceResponse
-)
+try:
+    from app.rag.schemas import (
+        StatutoryCitation,
+        ModeratorGuidanceQuery,
+        ModeratorGuidanceResponse
+    )
+except ImportError:
+    from ai_server.app.rag.schemas import (
+        StatutoryCitation,
+        ModeratorGuidanceQuery,
+        ModeratorGuidanceResponse
+    )
 
 # Curated, verified statutory legal corpus for India
 STATUTORY_CORPUS: List[Dict[str, Any]] = [

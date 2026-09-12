@@ -41,11 +41,11 @@ async def submit_safety_report(
     Automatically triages the report, creates an incident, attaches to the child's active case,
     and assigns a persistent moderator.
     """
-    # Rate limit check (especially for anonymous submissions)
+    report_text = data.content or data.details or data.category
     await check_anonymous_report_rate_limit(
         request=request,
         redis_client=redis_client,
-        content=data.details or data.category,
+        content=report_text,
         category=data.category
     )
     reporter_id = optional_user.id if optional_user else None

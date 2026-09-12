@@ -50,19 +50,20 @@ async def submit_report(
 
     # 3. Create or attach to active case
     platform_info = f" on {data.platform}" if data.platform else ""
+    text_content = data.content or data.details or data.category
     case = await get_or_create_active_case_for_child(
         db,
         child_id=child_id,
         title=f"Report: {matched_type.value.replace('_', ' ').title()}{platform_info}",
-        description=data.content[:200]
+        description=text_content[:200]
     )
 
     # 4. Create Incident linked to case
     incident = Incident(
         case_id=case.id,
         incident_type=matched_type.value,
-        severity=IncidentSeverity.MEDIUM.value,
-        description=f"Platform: {data.platform or 'Unspecified'}\nDetails: {data.content}",
+        severity="medium",
+        description=f"Platform: {data.platform or 'Unspecified'}\nDetails: {text_content}",
         trust_level="unverified",
         source="anonymous" if data.is_anonymous else reporter_role,
         is_verified=False
@@ -78,7 +79,7 @@ async def submit_report(
         case_id=case.id,
         reporter_id=None if data.is_anonymous else reporter_user_id,
         reporter_type=reporter_type,
-        content=data.content,
+        content=text_content,
         is_anonymous=data.is_anonymous,
         status="submitted"
     )

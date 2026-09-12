@@ -66,6 +66,8 @@ async def trigger_sos(
 
     # 3. Create SOSEvent
     location_str = data.location_address or f"GPS ({data.latitude:.4f}, {data.longitude:.4f})"
+    route_to_alternates_only = bool(data.is_silent_duress or data.bypass_primary_guardians)
+
     sos_event = SOSEvent(
         child_id=child.id,
         case_id=case.id,
@@ -74,7 +76,9 @@ async def trigger_sos(
         accuracy=data.accuracy,
         location_address=location_str,
         status="active",
-        message=data.message or "Emergency assistance requested"
+        message=data.message or ("Silent duress emergency assistance requested" if data.is_silent_duress else "Emergency assistance requested"),
+        is_silent_duress=data.is_silent_duress,
+        routed_to_alternate_adults_only=route_to_alternates_only
     )
     db.add(sos_event)
 
@@ -83,7 +87,7 @@ async def trigger_sos(
         case_id=case.id,
         incident_type="physical_threat",
         severity="critical",
-        description=f"Emergency SOS triggered by {child.display_name} at {location_str}",
+        description=f"Emergency SOS triggered by {child.display_name} at {location_str}" + (" [SILENT DURESS / DOMESTIC OVERRIDE]" if route_to_alternates_only else ""),
         trust_level="ai_flagged",
         source="sos_button",
         location_lat=data.latitude,
@@ -98,13 +102,18 @@ async def trigger_sos(
     links = links_res.scalars().all()
 
     for link in links:
+        if route_to_alternates_only:
+            # Bypass abusive primary guardians: notify ONLY approved alternate trusted adults
+            if not (link.is_alternate_trusted_adult and link.nomination_status == "APPROVED"):
+                continue
+
         adult_res = await db.execute(select(Adult).where(Adult.id == link.adult_id))
         adult = adult_res.scalar_one_or_none()
         if adult and adult.user_id:
             notif = Notification(
                 user_id=adult.user_id,
                 notification_type="sos_alert",
-                title=f"🚨 EMERGENCY: SOS Triggered by {child.display_name}",
+                title=f"🚨 EMERGENCY: SOS Triggered by {child.display_name}" if not route_to_alternates_only else f"🚨 CONFIDENTIAL DURESS ALERT: {child.display_name} needs urgent help",
                 body=f"Your linked child {child.display_name} has triggered an SOS emergency alert at {location_str}.",
                 data={
                     "sos_id": str(sos_event.id),
@@ -113,7 +122,9 @@ async def trigger_sos(
                     "child_id": str(child.id),
                     "child_name": child.display_name,
                     "latitude": data.latitude,
-                    "longitude": data.longitude
+                    "longitude": data.longitude,
+                    "is_silent_duress": data.is_silent_duress,
+                    "bypassed_primary_guardians": route_to_alternates_only
                 }
             )
             db.add(notif)
@@ -127,9 +138,9 @@ async def trigger_sos(
             mod_notif = Notification(
                 user_id=mod.user_id,
                 notification_type="sos_alert_moderator",
-                title=f"🚨 EMERGENCY: SOS in Case {case.protected_case_id}",
-                body=f"Child {child.display_name} triggered an emergency SOS at {location_str}.",
-                data={"sos_id": str(sos_event.id), "case_id": str(case.id)}
+                title=f"🚨 EMERGENCY: SOS in Case {case.protected_case_id}" + (" [DURESS]" if route_to_alternates_only else ""),
+                body=f"Child {child.display_name} triggered an emergency SOS at {location_str} (Domestic Duress Flag: {route_to_alternates_only}).",
+                data={"sos_id": str(sos_event.id), "case_id": str(case.id), "is_silent_duress": data.is_silent_duress}
             )
             db.add(mod_notif)
 
@@ -149,6 +160,8 @@ async def trigger_sos(
         message=sos_event.message,
         child_name=child.display_name,
         protected_child_id=child.protected_child_id,
+        is_silent_duress=sos_event.is_silent_duress,
+        routed_to_alternate_adults_only=sos_event.routed_to_alternate_adults_only,
         notified_guardians_count=notified_guardians_count,
         created_at=sos_event.created_at,
         resolved_at=sos_event.resolved_at,

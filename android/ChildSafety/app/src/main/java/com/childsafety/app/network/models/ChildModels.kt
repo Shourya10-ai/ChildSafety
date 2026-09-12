@@ -44,3 +44,34 @@ data class EmergencyContact(
     @Json(name = "relationship") val relationship: String,
     @Json(name = "is_primary") val isPrimary: Boolean
 )
+
+@JsonClass(generateAdapter = true)
+data class NominateAdultRequest(
+    @Json(name = "adult_identifier") val adultIdentifier: String,
+    @Json(name = "relationship_label") val relationshipLabel: String,
+    @Json(name = "reason") val reason: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class NominateAdultResponse(
+    @Json(name = "message") val message: String,
+    @Json(name = "link_id") val linkId: String,
+    @Json(name = "nomination_status") val nominationStatus: String,
+    @Json(name = "relationship_label") val relationshipLabel: String?
+)
+
+@JsonClass(generateAdapter = true)
+data class TrustedAdultItem(
+    @Json(name = "link_id") val linkId: String,
+    @Json(name = "adult_id") val adultId: String,
+    @Json(name = "child_id") val childId: String,
+    @Json(name = "adult_name") val adultName: String?,
+    @Json(name = "adult_email") val adultEmail: String?,
+    @Json(name = "adult_phone") val adultPhone: String?,
+    @Json(name = "relationship") val relationship: String,
+    @Json(name = "relationship_label") val relationshipLabel: String?,
+    @Json(name = "is_alternate_trusted_adult") val isAlternateTrustedAdult: Boolean,
+    @Json(name = "nomination_status") val nominationStatus: String,
+    @Json(name = "linked_at") val linkedAt: String?,
+    @Json(name = "vetted_at") val vettedAt: String?
+)
