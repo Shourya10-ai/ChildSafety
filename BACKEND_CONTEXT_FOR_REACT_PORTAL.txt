@@ -633,7 +633,94 @@ All routes are prefixed with: /api/v1/
   Maps:          Google Maps API key: AIzaSyBmKfLb1BNXYkj4MmhsS8aTbPPWfE97Yaw
                    (embed maps for SOS location display)
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12. PHASE 9: MISSING CHILDREN, LONGITUDINAL INTELLIGENCE & DPDP COMPLIANCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  A. MISSING CHILDREN & CITIZEN SIGHTINGS:
+  ─────────────────────────────────────────────────────────────────────────────
+  POST /api/v1/missing-children/
+    File emergency missing child alert (auto-creates critical case & assigns protector).
+    Body:
+    {
+      "child_name": "Aman Verma",
+      "photo_url": "https://...",
+      "description": "Missing from park since 4 PM",
+      "age_when_missing": 10,
+      "gender": "Male",
+      "height_cm": 135.0,
+      "weight_kg": 32.0,
+      "clothing_description": "Blue uniform and red backpack",
+      "identifying_marks": "Small scar on right elbow",
+      "last_known_address": "Lodhi Garden, New Delhi",
+      "state": "Delhi",
+      "district": "Delhi"
+    }
+
+  GET /api/v1/missing-children/?state=Delhi&district=Delhi&limit=50
+    List active missing children alerts in jurisdiction.
+
+  GET /api/v1/missing-children/{id}
+    Detailed profile with list of submitted citizen sightings.
+
+  POST /api/v1/missing-children/{id}/sightings
+    Submit geo-tagged sighting:
+    {
+      "location_address": "Near Central Secretariat Metro Gate 3",
+      "sighting_notes": "Spotted boy matching description asking for directions",
+      "image_url": "https://..."
+    }
+
+  PUT /api/v1/missing-children/sightings/{sighting_id}/verify  (Roles: moderator, authority, admin)
+    Human-moderator verification of candidate sighting:
+    {
+      "is_match": true,
+      "notes": "CCTV footage confirms match"
+    }
+
+  PUT /api/v1/missing-children/{id}/resolve  (Roles: moderator, authority, admin)
+    Marks missing child as FOUND and closes the linked emergency case:
+    {
+      "resolution_notes": "Child safely secured by PCR van and reunited with family."
+    }
+
+  B. LONGITUDINAL SAFETY INTELLIGENCE:
+  ─────────────────────────────────────────────────────────────────────────────
+  GET /api/v1/intelligence/child/{child_id}/timeline
+    Returns complete chronological safety timeline for a child across cases,
+    infractions, emergency SOS beacons, and community reports.
+
+  GET /api/v1/intelligence/child/{child_id}/patterns  (Roles: moderator, authority, admin)
+    Cross-case heuristic detector for recurring threats:
+    - RECURRING_GROOMING_THREAT (POCSO Act 2012 Sec 11 & Sec 19)
+    - PERSISTENT_BULLYING_COERCION (BNS 2023 Sec 351)
+    - FREQUENT_EMERGENCY_DURESS (Juvenile Justice Act 2015 Sec 27)
+    - DOMESTIC_SAFETY_BYPASS_ACTIVE
+
+  GET /api/v1/intelligence/child/{child_id}/report  (Roles: moderator, authority, admin)
+    Generates structured moderator intelligence dossier with risk trajectory
+    ("ESCALATING_CRITICAL", "ELEVATED_CONCERN", "STABLE") and statutory triggers.
+
+  C. DPDP ACT 2023 COMPLIANCE & 18+ RIGHTS:
+  ─────────────────────────────────────────────────────────────────────────────
+  GET /api/v1/dpdp/rights
+    User statutory DPDP summary (18+ adult self-custody status, consent status, forensic retention lock).
+
+  POST /api/v1/dpdp/erasure-request
+    Human-gated Section 12 erasure request:
+    {
+      "reason": "Account closed, requesting data erasure",
+      "scope": "ALL_SURVEILLANCE_AND_TRACKING"
+    }
+
+  POST /api/v1/dpdp/run-transitions  (Roles: moderator, admin)
+    Age-of-majority transition sweep: severs guardian links, expires consent, promotes 18+ accounts to adult self-custody.
+
+  POST /api/v1/dpdp/run-retention-sweep  (Roles: moderator, admin)
+    Dual-track retention purge: purges operational logs older than 90 days while preserving 7-year statutory evidence.
+
 ================================================================================
   END OF BACKEND CONNECTIVITY CONTEXT
   Full interactive API docs: https://squishier-clunky-neuter.ngrok-free.dev/docs
 ================================================================================
+

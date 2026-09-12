@@ -40,6 +40,7 @@ fun ChildHomeScreen(
     onNavigateToReport: () -> Unit,
     onNavigateToChat: () -> Unit,
     onNavigateToTips: () -> Unit,
+    onNavigateToMissingAlerts: () -> Unit = {},
     onSwitchMode: () -> Unit,
     viewModel: SosViewModel = hiltViewModel()
 ) {
@@ -266,6 +267,25 @@ fun ChildHomeScreen(
             ActionCard(title = "Report a\nProblem", icon = Icons.Filled.Warning, onClick = onNavigateToReport, modifier = Modifier.weight(1f))
             ActionCard(title = "Safety\nChat", icon = Icons.Filled.MailOutline, onClick = onNavigateToChat, modifier = Modifier.weight(1f))
             ActionCard(title = "Safety\nTips", icon = Icons.Filled.Info, onClick = onNavigateToTips, modifier = Modifier.weight(1f))
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Missing Child Alerts Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onNavigateToMissingAlerts() },
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text("Missing Child Alerts & Sightings", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                    Text("View active search notices and submit citizen sightings", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))

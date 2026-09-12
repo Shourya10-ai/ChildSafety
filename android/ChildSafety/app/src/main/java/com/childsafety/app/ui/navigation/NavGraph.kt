@@ -39,6 +39,10 @@ object Routes {
     const val ADULT_CONTACTS = "adult_contacts"
     
     const val SHARED_HOME = "shared_home"
+
+    const val MISSING_CHILD_ALERTS = "missing_child_alerts"
+    const val REPORT_MISSING_CHILD = "report_missing_child"
+    const val DPDP_RIGHTS = "dpdp_rights"
 }
 
 @Composable
@@ -169,6 +173,7 @@ fun AppNavGraph(startDestination: String = Routes.WELCOME) {
                     onNavigateToReport = { navController.navigate(Routes.CHILD_REPORT) },
                     onNavigateToChat = { navController.navigate(Routes.CHILD_CHAT) },
                     onNavigateToTips = { navController.navigate(Routes.CHILD_TIPS) },
+                    onNavigateToMissingAlerts = { navController.navigate(Routes.MISSING_CHILD_ALERTS) },
                     onSwitchMode = {
                         navController.navigate(Routes.MODE_SELECTION) {
                             popUpTo(Routes.CHILD_HOME) { inclusive = true }
@@ -196,6 +201,9 @@ fun AppNavGraph(startDestination: String = Routes.WELCOME) {
                         navController.navigate(Routes.DECOY_CALCULATOR) {
                             popUpTo(0) { inclusive = true }
                         }
+                    },
+                    onNavigateToDpdpRights = {
+                        navController.navigate(Routes.DPDP_RIGHTS)
                     }
                 )
             }
@@ -215,7 +223,10 @@ fun AppNavGraph(startDestination: String = Routes.WELCOME) {
                     onNavigateToLinkChild = { navController.navigate(Routes.ADULT_LINK_CHILD) },
                     onNavigateToAlerts = { navController.navigate(Routes.ADULT_ALERTS) },
                     onNavigateToContacts = { navController.navigate(Routes.ADULT_CONTACTS) },
-                    onNavigateToSettings = { navController.navigate(Routes.MODE_SELECTION) }
+                    onNavigateToSettings = { navController.navigate(Routes.MODE_SELECTION) },
+                    onNavigateToReportMissingChild = { navController.navigate(Routes.REPORT_MISSING_CHILD) },
+                    onNavigateToMissingChildAlerts = { navController.navigate(Routes.MISSING_CHILD_ALERTS) },
+                    onNavigateToDpdpRights = { navController.navigate(Routes.DPDP_RIGHTS) }
                 )
             }
             composable(Routes.ADULT_LINK_CHILD) {
@@ -226,6 +237,17 @@ fun AppNavGraph(startDestination: String = Routes.WELCOME) {
             }
             composable(Routes.ADULT_CONTACTS) {
                 EmergencyContactsScreen()
+            }
+
+            // Phase 9: Missing Child Network & DPDP Act
+            composable(Routes.MISSING_CHILD_ALERTS) {
+                MissingChildAlertsScreen(onNavigateBack = { navController.popBackStack() })
+            }
+            composable(Routes.REPORT_MISSING_CHILD) {
+                MissingChildReportScreen(onNavigateBack = { navController.popBackStack() })
+            }
+            composable(Routes.DPDP_RIGHTS) {
+                DpdpRightsScreen(onNavigateBack = { navController.popBackStack() })
             }
         }
     }

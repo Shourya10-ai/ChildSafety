@@ -72,6 +72,16 @@ class WebSocketManager:
             except Exception:
                 pass
 
+    async def broadcast_to_channel(self, message: dict, channel: str):
+        if channel.startswith("cs:role:"):
+            role = channel.split(":")[-1]
+            await self.broadcast_to_role(message, role)
+        elif channel.startswith("cs:user:"):
+            uid = channel.split(":")[-1]
+            await self.send_personal_message(message, uid)
+        else:
+            await self.broadcast(message)
+
     async def publish_event(self, redis_client: redis.Redis, channel: str, event_data: dict):
         """
         Publishes event to Redis Pub/Sub so all backend workers receive and fan out to their WS clients.

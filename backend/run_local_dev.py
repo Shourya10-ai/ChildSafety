@@ -30,6 +30,7 @@ from app.models.escalation import Escalation
 from app.models.audit import AuditLog
 from app.models.chain_of_custody import EvidenceChainOfCustody
 from app.models.parental_consent import ParentalConsent
+from app.models.missing_child import MissingChild, CCTVCandidate
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 import app.db.session as db_session_module
@@ -104,6 +105,8 @@ async def dev_lifespan(app: FastAPI):
         AuditLog.__table__,
         EvidenceChainOfCustody.__table__,
         ParentalConsent.__table__,
+        MissingChild.__table__,
+        CCTVCandidate.__table__,
     ]
     async with dev_engine.begin() as conn:
         for tbl in tables_to_create:

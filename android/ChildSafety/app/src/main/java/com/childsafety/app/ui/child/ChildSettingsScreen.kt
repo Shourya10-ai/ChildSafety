@@ -13,7 +13,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ChildSettingsScreen(
     onExitChildMode: () -> Unit,
-    onQuickStealthExit: () -> Unit = onExitChildMode
+    onQuickStealthExit: () -> Unit = onExitChildMode,
+    onNavigateToDpdpRights: () -> Unit = {}
 ) {
     var selectedLanguage by remember { mutableStateOf("English") }
     val languages = listOf("English", "Hindi")
@@ -107,6 +108,13 @@ fun ChildSettingsScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Stealth / Decoy Quick Exit
+        OutlinedButton(
+            onClick = onNavigateToDpdpRights,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("🛡️ DPDP Privacy Rights & Data Custody")
+        }
+
         OutlinedButton(
             onClick = onQuickStealthExit,
             modifier = Modifier.fillMaxWidth(),

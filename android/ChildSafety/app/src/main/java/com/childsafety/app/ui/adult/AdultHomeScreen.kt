@@ -33,6 +33,9 @@ fun AdultHomeScreen(
     onNavigateToAlerts: () -> Unit,
     onNavigateToContacts: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToReportMissingChild: () -> Unit = {},
+    onNavigateToMissingChildAlerts: () -> Unit = {},
+    onNavigateToDpdpRights: () -> Unit = {},
     viewModel: AdultAlertsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -209,6 +212,39 @@ fun AdultHomeScreen(
             }
         }
 
+        // Phase 9: Missing Child Network & DPDP Act Controls
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onNavigateToReportMissingChild() },
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+        ) {
+            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text("Report Missing Child (Emergency)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.titleSmall)
+                    Text("Broadcast urgent missing notice to police and moderators", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                }
+            }
+        }
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onNavigateToMissingChildAlerts() },
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Place, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text("Active Missing Child Search Alerts", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                    Text("Review open alerts and sightings in your district", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(4.dp))
         Text("Quick Access & Helplines", style = MaterialTheme.typography.titleMedium)
 
@@ -231,6 +267,12 @@ fun AdultHomeScreen(
             Icon(Icons.Filled.Settings, contentDescription = "Settings")
             Spacer(modifier = Modifier.width(8.dp))
             Text("Settings")
+        }
+
+        OutlinedButton(onClick = onNavigateToDpdpRights, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Filled.Lock, contentDescription = "DPDP Rights")
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("DPDP Act Privacy & Rights Portal")
         }
     }
 }

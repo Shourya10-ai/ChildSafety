@@ -12,8 +12,11 @@ from app.api.v1.evidence import router as evidence_router
 from app.api.v1.sos import router as sos_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.consent import router as consent_router
-from app.api.v1.ws import router as ws_router
 from app.api.v1.chat import router as chat_router
+from app.api.v1.missing_children import router as missing_children_router
+from app.api.v1.intelligence import router as intelligence_router
+from app.api.v1.dpdp import router as dpdp_router
+from app.api.v1.ws import router as ws_router
 
 router = APIRouter()
 
@@ -30,4 +33,7 @@ router.include_router(sos_router, prefix="/sos", tags=["SOS"])
 router.include_router(notifications_router, prefix="/notifications", tags=["Notifications"])
 router.include_router(consent_router, prefix="/consent", tags=["Parental Consent"])
 router.include_router(chat_router)
+router.include_router(missing_children_router)
+router.include_router(intelligence_router)
+router.include_router(dpdp_router)
 router.include_router(ws_router, tags=["WebSocket Gateway"])
