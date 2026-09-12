@@ -38,6 +38,8 @@ android/ChildSafety/local.properties
 android/ChildSafety/captures/
 android/ChildSafety/.externalNativeBuild/
 android/ChildSafety/.cxx/
+android/ChildSafety/apk_release/
+*.apk
 
 # Model files (large)
 ai_server/model_store/*.bin

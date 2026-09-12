@@ -111,7 +111,41 @@ async def dev_lifespan(app: FastAPI):
                 await conn.run_sync(tbl.create, checkfirst=True)
             except Exception as e:
                 print(f"Notice creating {tbl.name}: {e}")
-    print("Local database tables ready (Auth, Users, Children, Adults, Cases, Chat).")
+        
+    # Auto-sync SQLite columns if missing
+    import sqlite3
+    try:
+        raw_conn = sqlite3.connect(LOCAL_DB_FILE)
+        cursor = raw_conn.cursor()
+        migrations = [
+            ("cases", "sla_deadline", "DATETIME"),
+            ("cases", "sla_breached", "BOOLEAN DEFAULT 0"),
+            ("cases", "sla_tier", "VARCHAR(30) DEFAULT 'STANDARD'"),
+            ("cases", "escalation_level", "INTEGER DEFAULT 0"),
+            ("sos_events", "is_silent_duress", "BOOLEAN DEFAULT 0"),
+            ("sos_events", "routed_to_alternate_adults_only", "BOOLEAN DEFAULT 0"),
+            ("adult_child_links", "is_alternate_trusted_adult", "BOOLEAN DEFAULT 0"),
+            ("adult_child_links", "nomination_status", "VARCHAR(30) DEFAULT 'APPROVED'"),
+            ("adult_child_links", "relationship_label", "VARCHAR(100)"),
+            ("adult_child_links", "vetted_by_moderator_id", "CHAR(32)"),
+            ("adult_child_links", "vetted_at", "DATETIME"),
+            ("adult_child_links", "vetting_notes", "TEXT"),
+        ]
+        for table_name, col_name, col_def in migrations:
+            try:
+                cursor.execute(f"PRAGMA table_info({table_name})")
+                cols = [r[1] for r in cursor.fetchall()]
+                if col_name not in cols:
+                    cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_def}")
+                    print(f"Auto-migrated: added {col_name} to {table_name}")
+            except Exception:
+                pass
+        raw_conn.commit()
+        raw_conn.close()
+    except Exception as e:
+        print(f"Notice auto-syncing sqlite columns: {e}")
+
+    print("Local database tables ready (Auth, Users, Children, Adults, Cases, Chat, Migrations).")
     
     yield
     await dev_engine.dispose()
