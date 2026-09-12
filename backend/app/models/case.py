@@ -9,7 +9,7 @@ from app.db.base import Base, TimestampMixin, SoftDeleteMixin
 class Case(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "cases"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
     child_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("children.id", ondelete="CASCADE"))
     moderator_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("moderators.id", ondelete="SET NULL"), nullable=True)
     protected_case_id: Mapped[str] = mapped_column(String(50), unique=True, index=True)
@@ -23,7 +23,7 @@ class Case(Base, TimestampMixin, SoftDeleteMixin):
 class Incident(Base, TimestampMixin):
     __tablename__ = "incidents"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
     case_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"))
     incident_type: Mapped[str] = mapped_column(String(50))
     severity: Mapped[str] = mapped_column(String(20))
@@ -41,7 +41,7 @@ class Incident(Base, TimestampMixin):
 class Report(Base, TimestampMixin):
     __tablename__ = "reports"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
     incident_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("incidents.id", ondelete="CASCADE"), nullable=True)
     case_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"), nullable=True)
     reporter_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
@@ -53,7 +53,7 @@ class Report(Base, TimestampMixin):
 class ModeratorNote(Base, TimestampMixin):
     __tablename__ = "moderator_notes"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
     case_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cases.id", ondelete="CASCADE"))
     moderator_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("moderators.id", ondelete="CASCADE"))
     content: Mapped[str] = mapped_column(Text)

@@ -6,17 +6,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChildReportScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: ReportViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
     var selectedCategory by remember { mutableStateOf("") }
     var selectedPlatform by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var isAnonymous by remember { mutableStateOf(true) }
-    var showDialog by remember { mutableStateOf(false) }
 
     val categories = listOf("Cyberbullying \uD83D\uDE21", "Inappropriate Message \uD83D\uDD1E", "Stranger Bothering Me ⚠️", "Feeling Unsafe \uD83C\uDD98")
     val platforms = listOf("WhatsApp", "Instagram", "Snapchat", "School", "Other")
@@ -91,25 +94,60 @@ fun ChildReportScreen(
             Text("Keep this completely anonymous")
         }
 
+        if (uiState.error != null) {
+            Text(
+                text = uiState.error!!,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
         Button(
-            onClick = { showDialog = true },
-            modifier = Modifier.fillMaxWidth()
+            onClick = {
+                viewModel.submitReport(
+                    category = selectedCategory,
+                    platform = selectedPlatform,
+                    content = description,
+                    isAnonymous = isAnonymous
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !uiState.isLoading
         ) {
-            Text("Submit Report")
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text("Submit Report")
+            }
         }
     }
 
-    if (showDialog) {
+    if (uiState.isSuccess) {
         AlertDialog(
             onDismissRequest = {
-                showDialog = false
+                viewModel.resetState()
                 onNavigateBack()
             },
             title = { Text("Report Received") },
-            text = { Text("Your report has been received. A caring safety moderator is looking into it.") },
+            text = {
+                Column {
+                    Text("Your report has been received. A caring safety moderator is looking into it.")
+                    if (uiState.protectedCaseId != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Protected Case ID: ${uiState.protectedCaseId}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(onClick = {
-                    showDialog = false
+                    viewModel.resetState()
                     onNavigateBack()
                 }) {
                     Text("OK")

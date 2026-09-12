@@ -3,7 +3,7 @@
 ================================================================================
 
 Last Updated: 2026-09-12
-Current Phase: Phase 4 COMPLETE (Phase 5 next)
+Current Phase: Phase 5 COMPLETE (Phase 6 next)
 
 This file contains the complete context for the AI-Powered Child Safety &
 Protection Platform. Give this file to any AI model and it should understand
@@ -420,7 +420,7 @@ Phase 5: Case & Incident Management
   - Evidence upload to MinIO (hash, provenance)
   - Moderator notes/case journal
   - Auto case creation + moderator assignment
-  STATUS: NOT STARTED
+  STATUS: ✅ COMPLETE
 
 Phase 6: SOS & Emergency System
   - SOS trigger + location capture (PostGIS)
@@ -644,6 +644,45 @@ SECTION 14: PROGRESS LOG
                * Complete hierarchical navigation routes connecting Welcome -> Auth (Login/Register) -> Mode Selection -> Child/Adult/Shared Home and all child sub-screens & adult sub-screens.
 
              Next: Phase 5 — Case & Incident Management
+
+[2026-09-12] PHASE 5 COMPLETE — Case & Incident Management
+             Backend:
+             - Models & Database:
+               * Added default=uuid.uuid4 to Case, Incident, Report, ModeratorNote, Evidence, Moderator, Assignment, Escalation for cross-DB & SQLite dev compatibility.
+               * Child model: made user_id nullable to support anonymous/unregistered child safety reports.
+               * Evidence model: tracks file_url, SHA-256 file_hash, file_size, media_type, mime_type, provenance metadata.
+             - Schemas & Validation:
+               * Case schemas (CaseStatus, CasePriority, CaseCreate, CaseUpdate, CaseOut, CaseDetailOut).
+               * Incident schemas (IncidentType, IncidentSeverity, TrustLevel, IncidentCreate, IncidentUpdate, IncidentOut).
+               * Report schemas (ReportCreate, ReportOut, ReportSubmissionResponse).
+               * Evidence schemas (EvidenceOut, EvidenceUploadResponse).
+               * Moderator & journal schemas (NoteType, ModeratorNoteCreate, ModeratorNoteOut, ModeratorOut, EscalationCreate, EscalationOut).
+             - Core Services:
+               * case_service: Case lifecycle transitions, longitudinal case attachment, auto case generation with unique CASE-XXXXXXXX IDs, persistent moderator relationship (child always retains assigned moderator), case journal notes, authority escalation.
+               * incident_service: Incident creation, case auto-linking, trust levels, moderator verification.
+               * report_service: Anonymous and authenticated reporting, automated triage into active cases, child PII protection.
+               * evidence_service: SHA-256 cryptographic digest calculation, media type inference, local storage & MinIO compatibility.
+             - API Endpoints (FastAPI):
+               * /api/v1/cases (GET /, POST /, GET /{id}, PUT /{id}, POST /{id}/notes, GET /{id}/notes, POST /{id}/escalate).
+               * /api/v1/incidents (GET /active, GET /{id}, POST /, PUT /{id}/verify).
+               * /api/v1/reports (POST / for anonymous/authenticated child/parent reports, GET /, GET /{id}).
+               * /api/v1/evidence (POST /upload for multipart evidence uploads).
+             - Tests & Verification:
+               * Automated tests in backend/tests/test_case_incident.py passing 100%.
+               * Verified live HTTP report submission against running local dev server: generates CASE-XXXXXXXX and links incident.
+
+             Android:
+             - Network & Models:
+               * ReportModels.kt: Moshi data classes for CreateReportRequest, ReportResponse, IncidentItem.
+               * ReportApi.kt: Retrofit endpoints for submitting reports and fetching active incidents.
+               * NetworkModule.kt: Provided ReportApi singleton in Hilt.
+             - UI Integration:
+               * ReportViewModel.kt: StateFlow-based submit action with progress state and live case confirmation.
+               * ChildReportScreen.kt: Connected to live ReportApi; submits category, platform, details, and anonymous switch; displays server-assigned Protected Case ID upon receipt.
+               * AdultAlertsViewModel.kt: Fetches live active incidents from /api/v1/incidents/active.
+               * AdultAlertsScreen.kt: Renders live incidents from backend combined with priority alerts.
+
+             Next: Phase 6 — SOS & Emergency System
 
 ================================================================================
 END OF CONTEXT

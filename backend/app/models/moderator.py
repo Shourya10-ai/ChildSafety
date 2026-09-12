@@ -9,7 +9,7 @@ from app.db.base import Base, TimestampMixin
 class Moderator(Base, TimestampMixin):
     __tablename__ = "moderators"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     employee_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
     specialization: Mapped[str | None] = mapped_column(String(100), nullable=True)
@@ -20,7 +20,7 @@ class Moderator(Base, TimestampMixin):
 class Assignment(Base):
     __tablename__ = "assignments"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
     child_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("children.id", ondelete="CASCADE"))
     moderator_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("moderators.id", ondelete="CASCADE"))
     assigned_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

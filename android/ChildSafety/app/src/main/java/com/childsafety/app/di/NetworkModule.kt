@@ -5,6 +5,7 @@ import com.childsafety.app.network.AdultApi
 import com.childsafety.app.network.AuthApi
 import com.childsafety.app.network.AuthInterceptor
 import com.childsafety.app.network.ChildApi
+import com.childsafety.app.network.ReportApi
 import com.childsafety.app.security.TokenManager
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -75,5 +76,11 @@ object NetworkModule {
     @Singleton
     fun provideAdultApi(retrofit: Retrofit): AdultApi {
         return retrofit.create(AdultApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideReportApi(retrofit: Retrofit): ReportApi {
+        return retrofit.create(ReportApi::class.java)
     }
 }
