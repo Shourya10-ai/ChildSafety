@@ -1,8 +1,10 @@
 package com.childsafety.app.di
 
 import android.content.Context
+import com.childsafety.app.network.AdultApi
 import com.childsafety.app.network.AuthApi
 import com.childsafety.app.network.AuthInterceptor
+import com.childsafety.app.network.ChildApi
 import com.childsafety.app.security.TokenManager
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -51,7 +53,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(client: OkHttpClient, moshi: Moshi): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:8000/")
+            .baseUrl("http://10.147.167.171:8000/")
             .client(client)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
@@ -61,5 +63,17 @@ object NetworkModule {
     @Singleton
     fun provideAuthApi(retrofit: Retrofit): AuthApi {
         return retrofit.create(AuthApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideChildApi(retrofit: Retrofit): ChildApi {
+        return retrofit.create(ChildApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAdultApi(retrofit: Retrofit): AdultApi {
+        return retrofit.create(AdultApi::class.java)
     }
 }

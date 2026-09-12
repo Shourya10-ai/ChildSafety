@@ -7,7 +7,10 @@ import androidx.navigation.compose.rememberNavController
 import com.childsafety.app.ui.auth.LoginScreen
 import com.childsafety.app.ui.auth.RegisterScreen
 import com.childsafety.app.ui.WelcomeScreen
-
+import com.childsafety.app.ui.mode.ModeSelectionScreen
+import com.childsafety.app.ui.child.ChildHomeScreen
+import com.childsafety.app.ui.adult.AdultHomeScreen
+import com.childsafety.app.ui.shared.SharedHomeScreen
 object Routes {
     const val WELCOME = "welcome"
     const val LOGIN = "login"
@@ -49,8 +52,40 @@ fun AppNavGraph(startDestination: String = Routes.WELCOME) {
             )
         }
         composable(Routes.MODE_SELECTION) {
-            // Placeholder until Phase 3
-            WelcomeScreen()
+            ModeSelectionScreen(
+                onModeSelected = { mode ->
+                    val route = when(mode) {
+                        "CHILD" -> Routes.CHILD_HOME
+                        "ADULT" -> Routes.ADULT_HOME
+                        "SHARED" -> Routes.SHARED_HOME
+                        else -> Routes.MODE_SELECTION
+                    }
+                    navController.navigate(route) {
+                        popUpTo(Routes.MODE_SELECTION) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable(Routes.CHILD_HOME) {
+            ChildHomeScreen(
+                onSwitchMode = {
+                    navController.navigate(Routes.MODE_SELECTION) {
+                        popUpTo(Routes.CHILD_HOME) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable(Routes.ADULT_HOME) {
+            AdultHomeScreen(onAddChild = {})
+        }
+        composable(Routes.SHARED_HOME) {
+            SharedHomeScreen(
+                onSwitchMode = {
+                    navController.navigate(Routes.MODE_SELECTION) {
+                        popUpTo(Routes.SHARED_HOME) { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }
