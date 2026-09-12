@@ -19,7 +19,20 @@ data class RegisterRequest(
     @Json(name = "school_name") val schoolName: String? = null,
     @Json(name = "linked_via_adult_email") val linkedViaAdultEmail: String? = null,
     @Json(name = "relationship_to_child") val relationshipToChild: String? = null,
-    val address: String? = null
+    val address: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class ReverseGeocodeResponse(
+    val state: String,
+    val district: String,
+    @Json(name = "pin_code") val pinCode: String? = null,
+    val latitude: Double,
+    val longitude: Double,
+    @Json(name = "state_code") val stateCode: String? = null,
+    @Json(name = "district_code") val districtCode: String? = null
 )
 
 @JsonClass(generateAdapter = true)

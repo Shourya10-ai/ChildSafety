@@ -142,3 +142,72 @@ def normalize_district_code(district_input: Optional[str]) -> str:
 def get_location_codes(state: Optional[str], district: Optional[str]) -> Tuple[str, str]:
     """Returns (state_code_2, district_code_3)."""
     return normalize_state_code(state), normalize_district_code(district)
+
+MAJOR_CITY_CENTROIDS = [
+    # (state, district, pin_code, lat, lng)
+    ("Delhi", "Delhi", "110001", 28.6139, 77.2090),
+    ("Delhi", "South Delhi", "110016", 28.5400, 77.1800),
+    ("Delhi", "North Delhi", "110007", 28.6900, 77.2100),
+    ("Maharashtra", "Mumbai", "400001", 18.9220, 72.8347),
+    ("Maharashtra", "Mumbai Suburban", "400050", 19.0760, 72.8777),
+    ("Maharashtra", "Pune", "411001", 18.5204, 73.8567),
+    ("Maharashtra", "Nagpur", "440001", 21.1458, 79.0882),
+    ("Karnataka", "Bangalore", "560001", 12.9716, 77.5946),
+    ("Tamil Nadu", "Chennai", "600001", 13.0827, 80.2707),
+    ("Telangana", "Hyderabad", "500001", 17.3850, 78.4867),
+    ("West Bengal", "Kolkata", "700001", 22.5726, 88.3639),
+    ("Gujarat", "Ahmedabad", "380001", 23.0225, 72.5714),
+    ("Rajasthan", "Jaipur", "302001", 26.9124, 75.7873),
+    ("Uttar Pradesh", "Lucknow", "226001", 26.8467, 80.9462),
+    ("Uttar Pradesh", "Noida", "201301", 28.5355, 77.3910),
+    ("Haryana", "Gurgaon", "122001", 28.4595, 77.0266),
+    ("Chandigarh", "Chandigarh", "160001", 30.7333, 76.7794),
+    ("Kerala", "Kochi", "682001", 9.9312, 76.2673),
+    ("Kerala", "Thiruvananthapuram", "695001", 8.5241, 76.9366),
+    ("Bihar", "Patna", "800001", 25.5941, 85.1376),
+    ("Madhya Pradesh", "Bhopal", "462001", 23.2599, 77.4126),
+    ("Madhya Pradesh", "Indore", "452001", 22.7196, 75.8577),
+    ("Assam", "Guwahati", "781001", 26.1445, 91.7362),
+    ("Odisha", "Bhubaneswar", "751001", 20.2961, 85.8245),
+    ("Punjab", "Amritsar", "143001", 31.6340, 74.8723),
+    ("Uttarakhand", "Dehradun", "248001", 30.3165, 78.0322),
+    ("Jammu and Kashmir", "Srinagar", "190001", 34.0837, 74.7973),
+    ("Goa", "Panaji", "403001", 15.4909, 73.8278)
+]
+
+def reverse_geocode_coordinates(latitude: float, longitude: float) -> Dict[str, Optional[str]]:
+    """
+    Reverse geocodes GPS coordinates into nearest Indian State, District, and PIN Code.
+    """
+    best_match = None
+    min_dist_sq = float("inf")
+    
+    for state, district, pin_code, c_lat, c_lng in MAJOR_CITY_CENTROIDS:
+        d_lat = latitude - c_lat
+        d_lng = longitude - c_lng
+        dist_sq = d_lat * d_lat + d_lng * d_lng
+        if dist_sq < min_dist_sq:
+            min_dist_sq = dist_sq
+            best_match = (state, district, pin_code)
+            
+    if best_match:
+        state, district, pin_code = best_match
+        return {
+            "state": state,
+            "district": district,
+            "pin_code": pin_code,
+            "latitude": latitude,
+            "longitude": longitude,
+            "state_code": normalize_state_code(state),
+            "district_code": normalize_district_code(district)
+        }
+    return {
+        "state": "Delhi",
+        "district": "Delhi",
+        "pin_code": "110001",
+        "latitude": latitude,
+        "longitude": longitude,
+        "state_code": "DL",
+        "district_code": "DEL"
+    }
+

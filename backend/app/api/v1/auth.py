@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
 from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 import redis.asyncio as redis
@@ -158,3 +158,17 @@ async def update_me(
         is_domestic_safety_mode=is_domestic,
         setup_path=setup_path
     )
+
+@router.get("/reverse-geocode")
+async def reverse_geocode_location(
+    latitude: float = Query(..., description="GPS latitude"),
+    longitude: float = Query(..., description="GPS longitude")
+):
+    """
+    Direct GPS Geolocation Lookup:
+    Reverse geocodes device GPS coordinates into Indian State, District, and PIN Code,
+    enabling 1-tap location setup without manual user input.
+    """
+    from app.utils.india_locations import reverse_geocode_coordinates
+    return reverse_geocode_coordinates(latitude, longitude)
+

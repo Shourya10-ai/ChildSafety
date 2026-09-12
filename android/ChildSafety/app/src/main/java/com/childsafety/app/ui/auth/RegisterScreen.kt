@@ -20,6 +20,15 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.Geocoder
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationServices
+import java.util.Locale
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,6 +55,59 @@ fun RegisterScreen(
     val setupPathVal by viewModel.childSetupPath.collectAsState()
     val parentEmailVal by viewModel.parentEmailState.collectAsState()
     val schoolNameVal by viewModel.schoolNameState.collectAsState()
+    val locationDetectedMsg by viewModel.locationDetectedMessage.collectAsState()
+    val isDetectingLocation by viewModel.isDetectingLocation.collectAsState()
+    val context = LocalContext.current
+
+    fun fetchDeviceLocationAndFill() {
+        viewModel.isDetectingLocation.value = true
+        val fusedClient = LocationServices.getFusedLocationProviderClient(context)
+        try {
+            fusedClient.lastLocation.addOnSuccessListener { loc ->
+                if (loc != null) {
+                    try {
+                        val geocoder = Geocoder(context, Locale.getDefault())
+                        @Suppress("DEPRECATION")
+                        val addresses = geocoder.getFromLocation(loc.latitude, loc.longitude, 1)
+                        if (!addresses.isNullOrEmpty()) {
+                            val addr = addresses[0]
+                            val state = addr.adminArea ?: "Delhi"
+                            val district = addr.subAdminArea ?: addr.locality ?: "Delhi"
+                            val pinCode = addr.postalCode ?: "110001"
+                            viewModel.applyDetectedLocation(
+                                lat = loc.latitude,
+                                lng = loc.longitude,
+                                state = state,
+                                district = district,
+                                pinCode = pinCode
+                            )
+                            viewModel.isDetectingLocation.value = false
+                            return@addOnSuccessListener
+                        }
+                    } catch (_: Exception) {}
+                    viewModel.reverseGeocodeAndSet(loc.latitude, loc.longitude)
+                } else {
+                    viewModel.reverseGeocodeAndSet(28.6139, 77.2090)
+                }
+            }.addOnFailureListener {
+                viewModel.reverseGeocodeAndSet(28.6139, 77.2090)
+            }
+        } catch (_: Exception) {
+            viewModel.reverseGeocodeAndSet(28.6139, 77.2090)
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                      permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (granted) {
+            fetchDeviceLocationAndFill()
+        } else {
+            viewModel.reverseGeocodeAndSet(28.6139, 77.2090)
+        }
+    }
 
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
@@ -251,7 +313,92 @@ fun RegisterScreen(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Auto-detect your location with 1-tap GPS, or enter details below.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        val fineGranted = ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+                        val coarseGranted = ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        if (fineGranted || coarseGranted) {
+                            fetchDeviceLocationAndFill()
+                        } else {
+                            locationPermissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    enabled = !isDetectingLocation
+                ) {
+                    if (isDetectingLocation) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Detecting GPS Location...", fontWeight = FontWeight.Medium)
+                    } else {
+                        Icon(Icons.Filled.Place, contentDescription = "Auto Detect Location", modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("📍 Auto-Detect GPS Location (1-Tap)", fontWeight = FontWeight.SemiBold)
+                    }
+                }
+
+                if (!locationDetectedMsg.isNullOrEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Filled.CheckCircle,
+                                contentDescription = "Location Set",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Auto-Detected: $locationDetectedMsg",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(

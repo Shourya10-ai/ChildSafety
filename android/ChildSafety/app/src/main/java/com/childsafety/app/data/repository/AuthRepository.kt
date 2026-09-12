@@ -110,4 +110,13 @@ class AuthRepository @Inject constructor(
     fun clearSession() {
         tokenManager.clearTokens()
     }
+
+    suspend fun reverseGeocode(latitude: Double, longitude: Double): AuthResult<ReverseGeocodeResponse> = withContext(Dispatchers.IO) {
+        try {
+            val response = authApi.reverseGeocode(latitude, longitude)
+            AuthResult.Success(response)
+        } catch (e: Exception) {
+            AuthResult.Error(e.localizedMessage ?: "Failed to resolve coordinates")
+        }
+    }
 }

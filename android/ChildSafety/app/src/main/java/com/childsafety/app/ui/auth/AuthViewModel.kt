@@ -46,6 +46,54 @@ class AuthViewModel @Inject constructor(
     val schoolNameState = MutableStateFlow("")
     val addressState = MutableStateFlow("")
 
+    // Direct GPS Location Upload & Auto-Detection
+    val latitudeState = MutableStateFlow<Double?>(null)
+    val longitudeState = MutableStateFlow<Double?>(null)
+    val isDetectingLocation = MutableStateFlow(false)
+    val locationDetectedMessage = MutableStateFlow<String?>(null)
+
+    fun applyDetectedLocation(
+        lat: Double,
+        lng: Double,
+        state: String,
+        district: String,
+        pinCode: String?
+    ) {
+        latitudeState.value = lat
+        longitudeState.value = lng
+        stateState.value = state
+        districtState.value = district
+        if (!pinCode.isNullOrBlank()) {
+            pinCodeState.value = pinCode
+        }
+        locationDetectedMessage.value = "$district, $state ${pinCode ?: ""} (%.4f, %.4f)".format(lat, lng)
+    }
+
+    fun reverseGeocodeAndSet(lat: Double, lng: Double) {
+        viewModelScope.launch {
+            isDetectingLocation.value = true
+            when (val res = authRepository.reverseGeocode(lat, lng)) {
+                is AuthResult.Success -> {
+                    val data = res.data
+                    applyDetectedLocation(
+                        lat = data.latitude,
+                        lng = data.longitude,
+                        state = data.state,
+                        district = data.district,
+                        pinCode = data.pinCode
+                    )
+                }
+                is AuthResult.Error -> {
+                    latitudeState.value = lat
+                    longitudeState.value = lng
+                    locationDetectedMessage.value = "GPS: %.4f, %.4f".format(lat, lng)
+                }
+                else -> Unit
+            }
+            isDetectingLocation.value = false
+        }
+    }
+
     fun login() {
         val errorMsg = validateLoginForm()
         if (errorMsg != null) {
@@ -93,7 +141,9 @@ class AuthViewModel @Inject constructor(
                 setupPath = if (selectedRole.value == "child") childSetupPath.value else null,
                 schoolName = schoolNameState.value.ifBlank { null },
                 linkedViaAdultEmail = if (selectedRole.value == "child" && childSetupPath.value == "COLLABORATIVE") parentEmailState.value.ifBlank { null } else null,
-                address = addressState.value.ifBlank { null }
+                address = addressState.value.ifBlank { null },
+                latitude = latitudeState.value,
+                longitude = longitudeState.value
             )
             when (val result = authRepository.register(request)) {
                 is AuthResult.Success -> {
@@ -144,8 +194,8 @@ class AuthViewModel @Inject constructor(
         if (!passwordState.value.any { it.isUpperCase() }) return "Password must contain at least one uppercase letter"
         if (!passwordState.value.any { it.isDigit() }) return "Password must contain at least one digit"
         if (passwordState.value != confirmPasswordState.value) return "Passwords do not match"
-        if (stateState.value.isBlank()) return "Please enter your state"
-        if (districtState.value.isBlank()) return "Please enter your district"
+        if (stateState.value.isBlank() && latitudeState.value == null) return "Please enter your state or auto-detect GPS location"
+        if (districtState.value.isBlank() && latitudeState.value == null) return "Please enter your district or auto-detect GPS location"
         if (selectedRole.value == "child" && childSetupPath.value == "COLLABORATIVE" && parentEmailState.value.isBlank()) {
             return "Please enter parent/guardian email to link"
         }

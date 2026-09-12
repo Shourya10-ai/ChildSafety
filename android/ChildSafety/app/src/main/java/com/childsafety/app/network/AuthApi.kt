@@ -21,4 +21,10 @@ interface AuthApi {
 
     @PUT("api/v1/auth/me")
     suspend fun updateMe(@Body request: UpdateProfileRequest): UserProfile
+
+    @GET("api/v1/auth/reverse-geocode")
+    suspend fun reverseGeocode(
+        @Query("latitude") latitude: Double,
+        @Query("longitude") longitude: Double
+    ): ReverseGeocodeResponse
 }
