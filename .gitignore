@@ -1,0 +1,67 @@
+# Child Safety Platform
+
+## Byte-level ignores
+*.pyc
+__pycache__/
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environment
+.env
+*.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+
+# Python
+venv/
+.venv/
+*.so
+pip-log.txt
+
+# Android
+android/ChildSafety/.gradle/
+android/ChildSafety/build/
+android/ChildSafety/app/build/
+android/ChildSafety/local.properties
+android/ChildSafety/captures/
+android/ChildSafety/.externalNativeBuild/
+android/ChildSafety/.cxx/
+
+# Model files (large)
+ai_server/model_store/*.bin
+ai_server/model_store/*.pt
+ai_server/model_store/*.onnx
+ai_server/model_store/*.safetensors
+!ai_server/model_store/.gitkeep
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Firebase credentials (NEVER commit)
+**/google-services.json
+**/firebase-credentials.json
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml

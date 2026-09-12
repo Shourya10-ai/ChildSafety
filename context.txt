@@ -1,0 +1,591 @@
+================================================================================
+                    CHILD SAFETY PLATFORM — MASTER CONTEXT
+================================================================================
+
+Last Updated: 2026-09-12
+Current Phase: Phase 2 COMPLETE (Phase 3 next)
+
+This file contains the complete context for the AI-Powered Child Safety &
+Protection Platform. Give this file to any AI model and it should understand
+the product, architecture, features, implementation plan, and current progress.
+
+================================================================================
+SECTION 1: PROJECT OVERVIEW
+================================================================================
+
+PROJECT TYPE:
+AI-enabled child safety, protection, support, and case-intelligence platform
+for India.
+
+PRIMARY GOAL:
+Build a unified child-safety ecosystem that combines:
+- Online child-safety monitoring
+- Cyberbullying and threat detection
+- Online grooming-risk detection
+- Anonymous child reporting
+- Professional human moderation
+- Counselling/support
+- Emergency SOS
+- Parent/adult involvement
+- Missing-child identification (CCTV-assisted)
+- Cross-case intelligence ("connect the dots")
+- Multilingual/regional-language support
+- Persistent longitudinal child safety records
+- Human-in-the-loop AI
+- Privacy-preserving architecture
+
+CORE PRINCIPLE:
+AI detects, classifies, summarizes, retrieves, and connects information.
+Humans (trained moderators, authorized authorities) verify and make decisions.
+The system NEVER independently accuses, contacts law enforcement, or makes
+irreversible child-protection decisions.
+
+CORE INNOVATION:
+1. Persistent moderator relationship — same moderator stays with a child
+2. Longitudinal case intelligence — timeline, not isolated tickets
+3. Cross-case "connect the dots" — knowledge graph linking verified cases
+
+================================================================================
+SECTION 2: TEAM STRUCTURE (3-Person Team)
+================================================================================
+
+PERSON 1 — Mobile/Android Engineer
+  "I build what the child/parent uses."
+  Owns: Kotlin Android app (Child Mode, Adult Mode, Shared Device Mode)
+
+PERSON 2 — Web/Frontend Engineer (NOT our scope)
+  "I build what moderators/police use."
+  Owns: React/Next.js web portal (Moderator Portal, Authority Portal)
+
+PERSON 3 — AI + Backend + Data Engineer
+  "I build everything behind them that makes the system intelligent."
+  Owns: FastAPI backend, AI/ML pipelines, databases, security
+
+WE ARE BUILDING: Person 1 + Person 3
+(Person 2's web portal is NOT in our scope)
+
+Connection flow:
+  Person 1 (Android App) → API → Person 3 (Backend/AI) → API/WS → Person 2 (Web)
+
+================================================================================
+SECTION 3: USER TYPES & APPLICATIONS
+================================================================================
+
+Four user roles:
+1. CHILD — uses Android app (Child Mode)
+2. ADULT / PARENT / GUARDIAN — uses Android app (Adult Mode)
+3. MODERATOR — uses Web portal (Person 2's scope, but we build the APIs)
+4. AUTHORITY / INVESTIGATOR — uses Web portal (Person 2's scope, but we build APIs)
+
+Two applications:
+1. ONE Android app with three modes (Child, Adult, Shared Device)
+2. ONE Web app with two portals (Moderator, Authority) — Person 2 builds this
+
+================================================================================
+SECTION 4: ANDROID APP ARCHITECTURE
+================================================================================
+
+Single unified Kotlin Android app with Jetpack Compose.
+
+MODES:
+┌─────────────────────────────────────────────┐
+│              UNIFIED ANDROID APP             │
+├─────────────┬──────────────┬────────────────┤
+│ CHILD MODE  │ ADULT MODE   │ SHARED DEVICE  │
+├─────────────┼──────────────┼────────────────┤
+│ Anonymous   │ Manage       │ Profile        │
+│ reporting   │ children     │ switching      │
+│ SOS         │ Emergency    │ Secure child   │
+│ Emergency   │ alerts       │ session        │
+│ location    │ Reporting    │ Separate       │
+│ Counselling │ Location/    │ permissions    │
+│ AI safety   │ emergency    │ Privacy        │
+│ assistant   │ management   │ boundaries     │
+│ Threat/     │ Child safety │                │
+│ bullying    │ information  │                │
+│ detection   │              │                │
+│ Regional    │              │                │
+│ language    │              │                │
+│ Moderator   │              │                │
+│ chat        │              │                │
+│ Notifs      │              │                │
+└─────────────┴──────────────┴────────────────┘
+
+TECH STACK (Android):
+- Kotlin, Android SDK, Jetpack Compose, Material 3
+- Room + SQLite + DataStore (local storage)
+- Retrofit + OkHttp + Moshi (networking)
+- Kotlin Coroutines + Flow (async)
+- Hilt (dependency injection)
+- Navigation Compose (navigation)
+- WorkManager + Foreground Services (background work)
+- BiometricPrompt + Android Keystore (security)
+- ONNX Runtime + ML Kit (on-device AI)
+- Firebase Cloud Messaging (push notifications)
+- WebSocket via OkHttp (real-time chat)
+- Google Maps SDK (maps)
+- CameraX (camera/media capture)
+
+KEY ARCHITECTURAL DECISIONS:
+- Identity-aware, not device-aware (shared device support)
+- Child session is PIN-protected, adult session requires biometric/password
+- Child-adult privacy boundaries enforced (child can report about a parent)
+- Offline-first: reports queued locally, synced when online
+- On-device AI first, server fallback for complex analysis
+- Encrypted local storage for sensitive data
+
+================================================================================
+SECTION 5: BACKEND ARCHITECTURE
+================================================================================
+
+FastAPI backend serving APIs for both Android app and Web portal.
+
+SERVICES/MODULES:
+- Authentication (OAuth 2.0, JWT, role-based)
+- User Management (CRUD for all user types)
+- Child Management (protected child ID, privacy)
+- Case Management (lifecycle, timeline, assignment)
+- Incident Management (creation, AI flags, trust levels)
+- Moderator Assignment (round-robin, persistent relationship)
+- Reporting (anonymous, identified, voice, evidence)
+- Evidence (upload, hash, provenance, verification)
+- SOS (emergency events, location, notifications)
+- Notifications (FCM push, WebSocket, in-app)
+- AI Inference (proxy to AI server, result storage)
+- Missing Child (case management, CCTV matching)
+- Case Linking (cross-case intelligence, graph queries)
+- Audit (comprehensive logging, tamper-resistant)
+
+TECH STACK (Backend):
+- Python 3.11, FastAPI, Pydantic, Pydantic-Settings
+- SQLAlchemy (async) + asyncpg
+- Alembic (migrations)
+- python-jose + passlib (JWT + password hashing)
+- WebSockets (real-time)
+- boto3 (S3/MinIO)
+- Firebase Admin SDK (push notifications)
+- Redis (caching, sessions, queues)
+- GeoAlchemy2 (PostGIS)
+- pgvector (vector search)
+
+================================================================================
+SECTION 6: AI SERVER ARCHITECTURE
+================================================================================
+
+Separate FastAPI server for AI/ML inference.
+
+NLP PIPELINE:
+- Cyberbullying detection (XLM-R / MuRIL fine-tuned)
+- Threat detection (severity levels, context-aware)
+- Grooming-risk detection (conversation-level patterns)
+- Language detection (Indian languages + code-mixed)
+- Entity extraction
+- Text classification
+- Multilingual: Hindi, English, Hinglish, regional languages
+
+COMPUTER VISION PIPELINE:
+[NOTE: Heavy continuous CCTV video processing model is EXCLUDED to keep system lightweight]
+- Missing child photo management & sighting uploads
+- Lightweight image candidate verification for human review
+- (Heavy YOLO/CLIP video stream processing deferred)
+
+SPEECH PIPELINE:
+- Speech-to-text (Whisper, Indic ASR)
+- Text-to-speech (Indic TTS)
+- Voice-based reporting
+
+OCR PIPELINE:
+- Screenshot → text (ML Kit, PaddleOCR)
+- Feed to safety NLP
+
+RISK ENGINE:
+- XGBoost / LightGBM
+- Combines: AI predictions + incident history + frequency + severity +
+  moderator feedback + temporal trends → risk assessment
+
+RAG + LLM:
+- Case data → embeddings → pgvector → retrieval
+- Permission-gated moderator queries
+- LLM generates answers with source citations
+- Case summarization
+
+TECH STACK (AI):
+- PyTorch, Hugging Face Transformers, Hugging Face Datasets
+- XLM-R, MuRIL, IndicBERT (multilingual NLP)
+- YOLO, OpenCV (computer vision)
+- CLIP/SigLIP (visual embeddings)
+- Whisper (speech-to-text)
+- XGBoost, LightGBM, scikit-learn (risk engine)
+- ONNX, ONNX Runtime (model export/optimization)
+- FAISS / pgvector (similarity search)
+- NumPy, Pandas
+
+================================================================================
+SECTION 7: DATABASE ARCHITECTURE
+================================================================================
+
+POSTGRESQL (primary relational):
+Tables: Users, Children, Adults, Moderators, Cases, Incidents, Reports,
+        Evidence, ModeratorNotes, SOSEvents, Notifications, Assignments,
+        Escalations, AuditLogs, MissingChildren, ChatMessages
+
+POSTGIS (geospatial, extension on PostgreSQL):
+- SOS locations, incident locations, CCTV locations
+- Missing-child last-known locations
+- Proximity searches, geo-fencing
+
+PGVECTOR (vector search, extension on PostgreSQL):
+- Case embeddings, incident similarity
+- Semantic search for RAG
+- Image/text embeddings for missing child matching
+
+NEO4J (knowledge graph):
+Nodes: Child, Incident, Account, Location, Evidence, Time
+Relationships: REPORTED_BY, OCCURRED_AT, INVOLVES_ACCOUNT, LINKED_TO
+Purpose: Cross-case "connect the dots" capability
+
+REDIS:
+- Caching (risk scores, session data)
+- Session management
+- Job queues
+- Real-time events (WebSocket pub/sub)
+- Rate limiting
+
+MINIO (S3-compatible object storage):
+- Images, videos, screenshots, audio, evidence files
+
+================================================================================
+SECTION 8: SECURITY ARCHITECTURE
+================================================================================
+
+IDENTITY VAULT:
+- Real identity encrypted (AES-256-GCM), stored separately
+- Case system uses Protected Child ID (e.g., Child #C8291)
+- Identity resolution only by authorized users with logged reason
+
+ACCESS CONTROL:
+- RBAC: role-based permissions (child, adult, moderator, authority, admin)
+- ABAC: attribute-based (moderator sees only assigned children)
+
+AUTHENTICATION:
+- OAuth 2.0, JWT (access + refresh tokens)
+- Biometric authentication on Android
+- PIN for child session (shared device)
+
+ENCRYPTION:
+- TLS for transit
+- AES-256-GCM for PII at rest
+- Android Keystore for mobile secrets
+
+AUDIT:
+- Every sensitive action logged (who, what, when, resource, IP, reason)
+- Tamper-resistant (append-only, hashed chain)
+
+FOUR TRUST LEVELS:
+1. RAW — original child submission
+2. AI-DERIVED — prediction, classification, risk score
+3. HUMAN-VERIFIED — moderator-confirmed
+4. OFFICIAL — authority-confirmed
+
+================================================================================
+SECTION 9: KEY WORKFLOWS
+================================================================================
+
+CHILD REPORT WORKFLOW:
+Child → anonymous report → privacy layer → case creation → AI analysis →
+moderator notification → human review → support/verification/escalation
+
+SOS WORKFLOW:
+Child presses SOS → 3s countdown → capture GPS → create emergency event →
+notify: linked adults + assigned moderator → emergency response → resolution
+
+MISSING CHILD WORKFLOW:
+Report filed → photo + description → AI generates embedding → CCTV uploads →
+person detection (YOLO) → embeddings → similarity search → ranked candidates →
+human verification
+
+CROSS-CASE INTELLIGENCE:
+New verified incident → extract entities → push to Neo4j → pattern detection →
+shared accounts/locations/patterns found → flag for moderator/authority review
+
+MODERATOR ASSISTANT (RAG):
+Moderator asks question → permission check → case data retrieval from pgvector →
+relevant context assembled → LLM generates answer with citations
+
+AI FEEDBACK LOOP:
+AI prediction → moderator decision → verified outcome → evaluation dataset →
+quality control → aggregated dataset → model training → evaluation → deployment
+
+================================================================================
+SECTION 10: PROJECT STRUCTURE
+================================================================================
+
+Child Safety/
+├── backend/                  # FastAPI backend server
+│   ├── app/
+│   │   ├── api/v1/           # Route handlers
+│   │   ├── core/             # Config, security, dependencies
+│   │   ├── models/           # SQLAlchemy ORM models
+│   │   ├── schemas/          # Pydantic request/response schemas
+│   │   ├── services/         # Business logic layer
+│   │   ├── db/               # Database session, migrations
+│   │   └── utils/            # Helpers, constants
+│   ├── alembic/              # DB migrations
+│   ├── tests/
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── main.py
+│
+├── ai_server/                # Separate AI/ML inference server
+│   ├── app/
+│   │   ├── api/              # AI inference endpoints
+│   │   ├── models/           # Model loading & management
+│   │   ├── pipelines/        # NLP, CV, Speech, OCR pipelines
+│   │   ├── risk_engine/      # Risk scoring system
+│   │   ├── rag/              # RAG + LLM pipeline
+│   │   └── utils/
+│   ├── model_store/          # Downloaded/trained model files
+│   ├── tests/
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── main.py
+│
+├── android/                  # Kotlin Android app
+│   └── ChildSafety/
+│       ├── app/
+│       │   └── src/main/
+│       │       ├── java/com/childsafety/app/
+│       │       │   ├── data/           # Repository, Room, DataStore
+│       │       │   ├── domain/         # Use cases, models
+│       │       │   ├── network/        # Retrofit, API clients
+│       │       │   ├── ui/             # Compose screens & viewmodels
+│       │       │   │   ├── child/      # Child mode screens
+│       │       │   │   ├── adult/      # Adult mode screens
+│       │       │   │   ├── shared/     # Shared device mode
+│       │       │   │   ├── auth/       # Login/register
+│       │       │   │   ├── common/     # Shared components
+│       │       │   │   └── navigation/ # Nav graph
+│       │       │   ├── service/        # Foreground services, FCM
+│       │       │   ├── ai/             # On-device ONNX/ML Kit
+│       │       │   ├── security/       # Encryption, Keystore
+│       │       │   └── di/             # Hilt DI modules
+│       │       └── res/
+│       ├── build.gradle.kts
+│       └── gradle/
+│
+├── docker-compose.yml        # PostgreSQL, Redis, Neo4j, MinIO
+├── .env.example
+└── context.txt               # THIS FILE
+
+================================================================================
+SECTION 11: IMPLEMENTATION PLAN (12 Phases)
+================================================================================
+
+Phase 1: Foundation & Project Scaffolding
+  - All three project skeletons (backend, ai_server, android)
+  - Docker infrastructure (PostgreSQL+PostGIS+pgvector, Redis, Neo4j, MinIO)
+  - Database schemas + Alembic migrations
+  - Health check endpoints
+  - Android project with all dependencies configured
+  STATUS: ✅ COMPLETE
+
+Phase 2: Authentication & Identity System
+  - JWT auth (register, login, refresh, logout)
+  - Role-based access control
+  - Identity vault (encrypted PII, protected child ID)
+  - Android login/register screens
+  - Secure token storage (Android Keystore)
+  - BiometricPrompt integration
+  STATUS: ✅ COMPLETE
+
+Phase 3: User & Child Management + App Mode Selection
+  - User/Child/Adult CRUD APIs
+  - Adult-child linking with privacy boundaries
+  - Android mode selection (Child/Adult/Shared)
+  - Profile switching for shared devices
+  - Onboarding flow
+  STATUS: NOT STARTED
+
+Phase 4: Android UI — Child, Adult & Shared Mode Screens
+  - Child Mode: Home, Report, Chat, Safety Tips, SOS, Settings
+  - Adult Mode: Home, Children List, Add Child, Alerts, Report, Settings
+  - Shared Device: Profile Switcher, Child Session Lock
+  - Common components: TopBar, BottomNav, Loading/Error states
+  STATUS: NOT STARTED
+
+Phase 5: Case & Incident Management
+  - Case CRUD + lifecycle (open/investigating/resolved/escalated)
+  - Incident management with AI flags + trust levels
+  - Anonymous reporting API
+  - Evidence upload to MinIO (hash, provenance)
+  - Moderator notes/case journal
+  - Auto case creation + moderator assignment
+  STATUS: NOT STARTED
+
+Phase 6: SOS & Emergency System
+  - SOS trigger + location capture (PostGIS)
+  - Emergency event creation + notification chain
+  - Proximity queries
+  - Android: SOS foreground service, countdown, GPS
+  - Adult: Emergency map with child location
+  NEEDS: Google Maps API key
+  STATUS: NOT STARTED
+
+Phase 7: AI Pipeline — NLP Safety Detection
+  - AI server with model loading infrastructure
+  - Cyberbullying detection (XLM-R/MuRIL)
+  - Threat detection (severity + context)
+  - Grooming-risk detection (conversation patterns)
+  - Language detection (Indian languages + code-mixed)
+  - Backend integration: auto-flag reports, notify moderators
+  NEEDS: GPU vs CPU decision, HuggingFace token (if gated models)
+  STATUS: NOT STARTED
+
+Phase 8: Notifications & Real-time Communication
+  - Firebase Cloud Messaging (push notifications)
+  - WebSocket chat (child ↔ moderator)
+  - Notification management (CRUD, read status)
+  - Android: FCM service, notification channels, chat UI
+  NEEDS: Firebase credentials (google-services.json + Admin SDK key)
+  STATUS: NOT STARTED
+
+Phase 9: Missing Child Management & Lightweight Image Sightings
+  - Missing child case management (photo, description, last known location)
+  - Sighting report submission with photo attachment
+  - Candidate listing for moderator/authority human verification
+  - [EXCLUDED: Heavy CCTV continuous video frame processing & heavy YOLO/CLIP video stream pipeline excluded to avoid resource overhead]
+  - Android: missing child alert viewing + sighting submission
+  STATUS: NOT STARTED
+
+Phase 10: Case Intelligence & Knowledge Graph
+  - Neo4j integration (nodes, relationships, queries)
+  - Risk engine (XGBoost/LightGBM)
+  - Case similarity via embeddings + pgvector
+  - Cross-case pattern detection
+  - "Connect the dots" capability
+  STATUS: NOT STARTED
+
+Phase 11: RAG, LLM & Speech
+  - RAG pipeline (embed → retrieve → generate)
+  - LLM integration (permission-gated moderator assistant)
+  - Case summarization
+  - Speech-to-text (Whisper, Indic ASR)
+  - Voice reporting (Android + backend)
+  - AI Safety Assistant for children
+  NEEDS: LLM API key (Gemini/OpenAI)
+  STATUS: NOT STARTED
+
+Phase 12: Security Hardening, On-device AI & Final Integration
+  - Full RBAC + ABAC implementation
+  - Audit logging (tamper-resistant)
+  - Hardened identity vault (KMS integration point)
+  - On-device AI (ONNX quantized models)
+  - OCR (ML Kit) → safety analysis
+  - Offline-first sync (WorkManager)
+  - End-to-end integration testing
+  STATUS: NOT STARTED
+
+================================================================================
+SECTION 12: OPEN QUESTIONS
+================================================================================
+
+1. GPU availability — Will the AI server run on GPU or CPU only?
+2. LLM choice — API-based (Gemini/OpenAI) or local (Llama/Qwen/Gemma)?
+3. Firebase project — Already set up or need to create?
+4. Google Maps vs Mapbox — Which maps provider?
+5. Deployment target — AWS, Azure, GCP, or local server?
+6. Hackathon vs production — Optimize for demo or production-grade?
+7. Model training — Have datasets or use pre-trained/zero-shot?
+
+================================================================================
+SECTION 13: CREDENTIALS TRACKER
+================================================================================
+
+| Credential                    | Status      | Needed By |
+|-------------------------------|-------------|-----------|
+| Google Maps API Key           | NOT PROVIDED | Phase 6   |
+| HuggingFace Token             | NOT PROVIDED | Phase 7   |
+| Firebase google-services.json | NOT PROVIDED | Phase 8   |
+| Firebase Admin SDK Key        | NOT PROVIDED | Phase 8   |
+| LLM API Key (Gemini/OpenAI)  | NOT PROVIDED | Phase 11  |
+
+================================================================================
+SECTION 14: PROGRESS LOG
+================================================================================
+
+[2026-09-12] Project initialized. Architecture finalized.
+             Implementation plan created and approved by user.
+             Created context.txt master context file.
+
+[2026-09-12] PHASE 1 COMPLETE — Foundation & Scaffolding
+             Files created: 76 total across 3 components
+             
+             Backend (33 files):
+             - FastAPI app with CORS, lifespan, health check
+             - Pydantic Settings config (DB, Redis, Neo4j, MinIO, JWT, AI)
+             - Async SQLAlchemy engine + session factory
+             - Base class with TimestampMixin + SoftDeleteMixin
+             - 19 ORM models: User, Child, Adult, AdultChildLink, Moderator,
+               Assignment, Case, Incident, Report, ModeratorNote, Evidence,
+               SOSEvent, Notification, ChatMessage, Escalation, AuditLog,
+               MissingChild, CCTVCandidate, IdentityVault
+             - PostGIS Geometry columns (SOSEvent, MissingChild, CCTVCandidate)
+             - pgvector Vector(512) columns (MissingChild, CCTVCandidate)
+             - Alembic migration setup (async env.py)
+             - Health check with DB + Redis connectivity test
+             
+             AI Server (19 files):
+             - Separate FastAPI app on port 8001
+             - Thread-safe singleton ModelRegistry (lazy loading, GPU/CPU)
+             - Health endpoints (/health, /health/models, /health/gpu)
+             - Pipeline stubs: NLP, CV, Speech, OCR
+             - Risk engine + RAG package stubs
+             
+             Android (24 files):
+             - Kotlin 2.0.20 + Jetpack Compose + Material 3
+             - Version catalog with 40+ dependencies
+             - Hilt DI, Room DB, Retrofit+OkHttp+Moshi networking
+             - DataStore preferences (app mode, profile, language, auth)
+             - Auth interceptor for JWT tokens
+             - Child-friendly theme (soft blues, greens, warm accents)
+             - WelcomeScreen placeholder
+             - All permissions in manifest
+             
+             Infrastructure (4 files):
+             - docker-compose.yml (PostgreSQL+pgvector, Redis, Neo4j, MinIO)
+             - .env.example with all config vars
+             - init-db.sql (PostGIS, pgvector, uuid-ossp, pgcrypto extensions)
+             - .gitignore
+             
+             Next: Phase 2 — Authentication & Identity System
+ 
+[2026-09-12] PHASE 2 COMPLETE — Authentication & Identity System
+             Backend:
+             - Core security (bcrypt password hashing, JWT access/refresh token creation & decoding)
+             - Protected IDs generator (Protected Child ID: CXXXXXXXX, Case ID: CASE-XXXXXXXX)
+             - Security encryption module: AES-256-GCM authenticated encryption with HKDF key derivation
+             - IdentityVaultService: secure encryption & storage of sensitive child PII (name, phone, school, guardian)
+             - Pydantic schemas: RegisterRequest (with 8-char + uppercase + digit password validation), LoginRequest, TokenResponse, UserProfile, UserUpdate
+             - AuthService: async register, login, token refresh rotation, and logout with Redis token revocation / blacklist
+             - FastAPI auth routes (/api/v1/auth/register, /login, /refresh, /logout, /me GET and PUT)
+             - Fast, role-based access control dependency require_roles()
+             - Unit tests in tests/test_auth_security.py
+ 
+             Android:
+             - AuthApi: Retrofit endpoints for register, login, refresh, logout, profile
+             - AuthModels: Moshi JSON data classes for all auth requests/responses
+             - TokenManager: EncryptedSharedPreferences backed by Android Keystore (MasterKey AES256-GCM)
+             - BiometricHelper: BiometricPrompt integration for biometric login & authentication
+             - AuthRepository: API wrapper with token persistence, error handling, IO coroutine dispatch
+             - AuthViewModel: StateFlow architecture with synchronous validation (min 8 chars, uppercase, digit)
+             - LoginScreen: Material 3 Compose screen with show/hide password, error handling, loading states
+             - RegisterScreen: Material 3 Compose screen with role selector (Child / Adult), form validation
+             - Navigation: Updated NavGraph with Welcome -> Login <-> Register -> Mode Selection routing
+             - MainActivity: Auto-routes based on tokenManager.isLoggedIn()
+             - NetworkModule: Provides AuthApi, TokenManager, OkHttpClient with AuthInterceptor
+ 
+             Next: Phase 3 — User & Child Management + App Mode Selection
+
+================================================================================
+END OF CONTEXT
+================================================================================

@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Child Safety</string>
+    <string name="welcome_title">Child Safety Platform</string>
+    <string name="welcome_subtitle">Protecting children together</string>
+    <string name="mode_child">Child Mode</string>
+    <string name="mode_adult">Adult Mode</string>
+    <string name="mode_shared">Shared Device</string>
+    <string name="sos">SOS</string>
+    <string name="report">Report</string>
+    <string name="chat">Chat</string>
+    <string name="settings">Settings</string>
+    <string name="loading">Loading...</string>
+    <string name="error_generic">Something went wrong</string>
+    <string name="retry">Retry</string>
+</resources>
