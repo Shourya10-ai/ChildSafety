@@ -605,6 +605,22 @@ SECTION 14: PROGRESS LOG
              - Placeholder dashboards: ChildHomeScreen, AdultHomeScreen, SharedHomeScreen
              - Navigation: Seamless flow from Auth -> Mode Selection -> respective Home dashboard
  
+             Fixes & Infrastructure Enhancements:
+             - GitHub Actions CI build resolved:
+               * Added vector shield icon drawables (ic_launcher_foreground.xml, ic_launcher_background.xml, adaptive mipmaps) to resolve AAPT linking error.
+               * Created UserEntity & UserDao in AppDatabase to resolve Room 2.6+ KSP requirement ("@Database annotation must specify list of entities").
+               * GitHub Actions workflow successfully compiled and published 48.99 MB ChildSafety-Debug-APK.
+             - Backend Local Dev Runner (run_local_dev.py):
+               * Created zero-dependency local runner supporting SQLite + in-memory Redis fallback so laptop can run backend without requiring Docker.
+               * Fixed passlib/bcrypt 5.0 compatibility bug by switching to direct native bcrypt.
+               * Added default=uuid.uuid4 to User/Child/Adult models for cross-DB UUID generation.
+               * Pydantic settings configured with extra='ignore' for .env flexibility.
+             - Physical Device Hardware Testing:
+               * User installed APK directly on physical Android phone via USB tethering (laptop at 10.147.167.171:8000).
+               * VERIFIED: Account registration on real phone -> live backend -> JWT generated & stored in Keystore.
+               * VERIFIED: Login with registered credentials.
+               * VERIFIED: Mode selection UI (Child Mode, Adult Mode, Shared Device/Hybrid Mode) fully functional.
+ 
              Next: Phase 4 — Android UI — Child, Adult & Shared Mode Screens
 
 ================================================================================
