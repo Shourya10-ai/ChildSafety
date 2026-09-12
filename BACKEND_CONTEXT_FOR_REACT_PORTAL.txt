@@ -989,7 +989,109 @@ All routes are prefixed with: /api/v1/
     }
 
 ================================================================================
+SECTION 12: PHASE 12 SECURITY HARDENING, ABAC & BSA FORENSIC AUDIT (NEW)
+================================================================================
+
+  A. ABAC POLICY EVALUATION ENGINE:
+  ─────────────────────────────────────────────────────────────────────────────
+  POST /api/v1/security/evaluate-policy
+    Headers: Authorization: Bearer <token>
+    Body: {
+      "user_id": "uuid",
+      "role": "moderator" | "authority" | "adult" | "child",
+      "user_state": "Maharashtra",
+      "user_district": "Mumbai",
+      "resource_type": "case" | "incident" | "report" | "identity_vault" | "sos",
+      "resource_id": "case-uuid",
+      "resource_state": "Maharashtra",
+      "resource_district": "Mumbai",
+      "assigned_moderator_id": "uuid",
+      "is_domestic_safety_mode": false,
+      "action": "read" | "write" | "update" | "assign" | "resolve_vault" | "emergency_override",
+      "justification": "FIR 102/2026 verification"
+    }
+    Response: {
+      "allowed": true,
+      "policy_rule": "OFFICIAL_JURISDICTION_ACCESS",
+      "reason": "Official role authorized within designated jurisdiction.",
+      "subject_role": "moderator",
+      "resource_type": "case",
+      "action": "read"
+    }
+
+  B. SECTION 63 BSA 2023 AUDIT LEDGER CHAIN VERIFICATION:
+  ─────────────────────────────────────────────────────────────────────────────
+  GET /api/v1/security/audit/verify-chain?limit=1000
+    Headers: Authorization: Bearer <moderator_or_authority_token>
+    Response: {
+      "is_valid": true,
+      "total_records_verified": 48,
+      "head_hash": "a1b2c3d4...",
+      "tampered_record_id": null,
+      "failure_reason": null,
+      "certificate": "CERTIFICATE UNDER SECTION 63 OF BHARATIYA SAKSHYA ADHINIYAM, 2023:\nForensic verification completed...",
+      "verified_at": "2026-09-12T..."
+    }
+
+  C. HARDENED IDENTITY VAULT (KMS ENVELOPE ENCRYPTION):
+  ─────────────────────────────────────────────────────────────────────────────
+  1. Masked Identity (Safe Dashboard Lookup):
+  GET /api/v1/security/vault/masked/{protected_child_id}
+    Headers: Authorization: Bearer <token>
+    Response: {
+      "protected_child_id": "C-MH-MUM-4001",
+      "is_registered": true,
+      "masked_name": "I****n V***a",
+      "masked_phone": "+91 98****3210",
+      "masked_address": "*** Marine Drive, Mumbai",
+      "has_school_record": true,
+      "has_guardian_record": true,
+      "encryption_algorithm": "AES-256-GCM Envelope KMS"
+    }
+
+  2. Audited Resolution (Court / Police FIR Unmasking):
+  POST /api/v1/security/vault/resolve
+    Headers: Authorization: Bearer <moderator_or_authority_token>
+    Body: {
+      "protected_child_id": "C-MH-MUM-4001",
+      "authorized_reason": "FIR 102/2026 Special Juvenile Police Unit summons",
+      "fir_number": "FIR-102-2026-POCSO"
+    }
+    Response: {
+      "protected_child_id": "C-MH-MUM-4001",
+      "name": "Ishaan Verma",
+      "phone": "+91 9820012345",
+      "address": "401 Sea Face Apartments, Marine Drive, Mumbai",
+      "school": "St. Xavier's High School",
+      "guardian_info": "Meera Verma (Mother)",
+      "audit_log_id": "uuid",
+      "entry_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bsa_compliance": "Section 63 BSA 2023 Authenticated"
+    }
+
+  D. EDGE SAFETY SCANNER SYNC:
+  ─────────────────────────────────────────────────────────────────────────────
+  POST /api/v1/security/edge-scan
+    Headers: Authorization: Bearer <token>
+    Body: {
+      "child_id": "uuid",
+      "source_type": "TEXT" | "SCREENSHOT_OCR",
+      "detected_threat_level": "HIGH_RISK",
+      "detected_indicators": ["EXTORTION_PHOTO_COERCION", "SECRECY_COERCION"],
+      "recommended_action": "SHOW_DECOY_EXIT"
+    }
+    Response: {
+      "status": "PROCESSED",
+      "child_id": "uuid",
+      "edge_risk_acknowledged": true,
+      "server_risk_score": 0.92,
+      "recommended_intervention": "PROACTIVE_DECOY_AND_MODERATOR_NOTIFY",
+      "audit_chain_hash": "hash"
+    }
+
+================================================================================
   END OF BACKEND CONNECTIVITY CONTEXT
   Full interactive API docs: https://squishier-clunky-neuter.ngrok-free.dev/docs
 ================================================================================
+
 

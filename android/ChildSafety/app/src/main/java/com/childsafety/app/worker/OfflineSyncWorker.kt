@@ -100,6 +100,11 @@ class OfflineSyncWorker(
 
             val syncRequest = OneTimeWorkRequestBuilder<OfflineSyncWorker>()
                 .setConstraints(constraints)
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    15,
+                    java.util.concurrent.TimeUnit.SECONDS
+                )
                 .build()
 
             WorkManager.getInstance(context).enqueueUniqueWork(

@@ -157,6 +157,11 @@ async def dev_lifespan(app: FastAPI):
             ("moderators", "jurisdiction_district", "VARCHAR(100)"),
             ("moderators", "organisation", "VARCHAR(200)"),
             ("moderators", "pocso_cert_number", "VARCHAR(100)"),
+            # Section 63 BSA 2023 Audit Ledger (Phase 12)
+            ("audit_logs", "prev_hash", "VARCHAR(64)"),
+            ("audit_logs", "entry_hash", "VARCHAR(64)"),
+            ("audit_logs", "signature", "VARCHAR(128)"),
+            ("audit_logs", "bsa_section", "VARCHAR(50) DEFAULT 'Section 63 BSA 2023'"),
         ]
         for table_name, col_name, col_def in migrations:
             try:
