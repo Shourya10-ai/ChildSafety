@@ -18,6 +18,8 @@ from app.api.v1.intelligence import router as intelligence_router
 from app.api.v1.dpdp import router as dpdp_router
 from app.api.v1.graph import router as graph_router
 from app.api.v1.risk import router as risk_router
+from app.api.v1.copilot import router as copilot_router
+from app.api.v1.speech import router as speech_router
 from app.api.v1.ws import router as ws_router
 
 router = APIRouter()
@@ -40,5 +42,7 @@ router.include_router(intelligence_router)
 router.include_router(dpdp_router)
 router.include_router(graph_router)
 router.include_router(risk_router)
+router.include_router(copilot_router, prefix="/copilot", tags=["AI Copilot & Legal RAG"])
+router.include_router(speech_router, prefix="/speech", tags=["Speech & Voice Reporting"])
 router.include_router(ws_router, tags=["WebSocket Gateway"])
 

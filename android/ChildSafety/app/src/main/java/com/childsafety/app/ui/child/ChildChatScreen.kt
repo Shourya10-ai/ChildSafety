@@ -32,6 +32,7 @@ fun ChildChatScreen(
     val uiState by viewModel.uiState.collectAsState()
     val messages by viewModel.messages.collectAsState()
     val messageInput by viewModel.messageInput.collectAsState()
+    val isAiMode by viewModel.isAiMode.collectAsState()
     val listState = rememberLazyListState()
 
     // Auto-scroll to latest message
@@ -65,20 +66,23 @@ fun ChildChatScreen(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                        .background(
+                            if (isAiMode) MaterialTheme.colorScheme.secondaryContainer
+                            else MaterialTheme.colorScheme.primaryContainer
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Security,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = if (isAiMode) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = uiState.assignedProtector ?: "Assigned Safety Protector",
+                        text = if (isAiMode) "🤖 AI Safety Guardian (24/7 Active)" else (uiState.assignedProtector ?: "Assigned Safety Protector"),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -91,7 +95,7 @@ fun ChildChatScreen(
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            text = uiState.protectedCaseId?.let { "Case $it • Confidential Channel" } ?: "Direct Support Active",
+                            text = if (isAiMode) "Zero Judgment • Confidential Guidance" else (uiState.protectedCaseId?.let { "Case $it • Confidential Channel" } ?: "Direct Support Active"),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -101,6 +105,27 @@ fun ChildChatScreen(
                     Icon(imageVector = Icons.Default.Refresh, contentDescription = "Refresh Chat")
                 }
             }
+        }
+
+        // Segmented Mode Toggle: Human Safety Protector vs AI Guardian
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = !isAiMode,
+                onClick = { viewModel.setAiMode(false) },
+                label = { Text("🛡️ Safety Protector") },
+                modifier = Modifier.weight(1f)
+            )
+            FilterChip(
+                selected = isAiMode,
+                onClick = { viewModel.setAiMode(true) },
+                label = { Text("🤖 AI Guardian (24/7)") },
+                modifier = Modifier.weight(1f)
+            )
         }
 
         // Messages list

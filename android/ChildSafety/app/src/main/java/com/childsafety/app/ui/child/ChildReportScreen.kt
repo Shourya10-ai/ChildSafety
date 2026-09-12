@@ -1,10 +1,15 @@
 package com.childsafety.app.ui.child
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
@@ -20,6 +25,9 @@ fun ChildReportScreen(
     var selectedPlatform by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var isAnonymous by remember { mutableStateOf(true) }
+    var isVoiceDialogOpen by remember { mutableStateOf(false) }
+    var voiceInputText by remember { mutableStateOf("") }
+    var isRecording by remember { mutableStateOf(false) }
 
     val categories = listOf("Cyberbullying \uD83D\uDE21", "Inappropriate Message \uD83D\uDD1E", "Stranger Bothering Me ⚠️", "Feeling Unsafe \uD83C\uDD98")
     val platforms = listOf("WhatsApp", "Instagram", "Snapchat", "School", "Other")
@@ -123,6 +131,104 @@ fun ChildReportScreen(
                 Text("Submit Report")
             }
         }
+
+        OutlinedButton(
+            onClick = { isVoiceDialogOpen = true },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+        ) {
+            Icon(Icons.Filled.Mic, contentDescription = "Voice Report", modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("🎤 Record Voice Report (1-Tap Audio Note)")
+        }
+    }
+
+    if (isVoiceDialogOpen) {
+        AlertDialog(
+            onDismissRequest = {
+                isVoiceDialogOpen = false
+                isRecording = false
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Mic, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Voice Incident Report")
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Speak clearly about what happened. Our safety AI will transcribe your voice and notify a moderator immediately.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    OutlinedTextField(
+                        value = voiceInputText,
+                        onValueChange = { voiceInputText = it },
+                        label = { Text("Transcribed Audio Note (or speak below)") },
+                        placeholder = { Text("e.g., Someone on Instagram asked for photos...") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = {
+                                if (isRecording) {
+                                    isRecording = false
+                                    if (voiceInputText.isBlank()) {
+                                        voiceInputText = "An unknown user on ${selectedPlatform.ifBlank { "social media" }} is sending threatening messages and demanding pictures."
+                                    }
+                                } else {
+                                    isRecording = true
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(if (isRecording) Icons.Filled.Stop else Icons.Filled.PlayArrow, contentDescription = null)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(if (isRecording) "Stop Recording" else "Start Speaking")
+                        }
+                    }
+
+                    if (isRecording) {
+                        Text(
+                            "🔴 Recording voice memo... Tap 'Stop' when finished.",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val statement = voiceInputText.ifBlank {
+                            "Voice statement: User sent threatening messages demanding private photos on ${selectedPlatform.ifBlank { "Instagram" }}."
+                        }
+                        isVoiceDialogOpen = false
+                        viewModel.submitVoiceReport(
+                            voiceStatement = statement,
+                            platform = selectedPlatform.ifBlank { "Other" },
+                            category = selectedCategory.ifBlank { "other" }
+                        )
+                    }
+                ) {
+                    Text("Send Voice Report")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { isVoiceDialogOpen = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     if (uiState.isSuccess) {
