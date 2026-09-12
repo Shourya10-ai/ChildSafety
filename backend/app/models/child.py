@@ -9,7 +9,7 @@ from app.db.base import Base, TimestampMixin
 class Child(Base, TimestampMixin):
     __tablename__ = "children"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     protected_child_id: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     display_name: Mapped[str] = mapped_column(String(100))
@@ -23,7 +23,7 @@ class Child(Base, TimestampMixin):
 class Adult(Base, TimestampMixin):
     __tablename__ = "adults"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     emergency_contacts: Mapped[list | dict] = mapped_column(JSON, default=[])
@@ -32,7 +32,7 @@ class Adult(Base, TimestampMixin):
 class AdultChildLink(Base):
     __tablename__ = "adult_child_links"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()"))
     adult_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("adults.id", ondelete="CASCADE"))
     child_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("children.id", ondelete="CASCADE"))
     relationship: Mapped[str] = mapped_column(String(50))

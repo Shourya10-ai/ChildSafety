@@ -26,6 +26,6 @@ class Settings(BaseSettings):
     AI_SERVER_URL: str = ""
     IDENTITY_VAULT_KEY: str = "CHANGE_ME_IDENTITY_VAULT_KEY_32CH"
 
-    model_config = ConfigDict(env_file=".env")
+    model_config = ConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()
