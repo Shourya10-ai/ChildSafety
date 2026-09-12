@@ -23,4 +23,8 @@ object AppModule {
             "child_safety_db"
         ).build()
     }
+
+    @Provides
+    @Singleton
+    fun provideUserDao(database: AppDatabase) = database.userDao()
 }
