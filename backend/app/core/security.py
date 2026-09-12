@@ -65,10 +65,12 @@ async def is_token_revoked_by_epoch(redis_client, token_iat: Optional[int]) -> b
                 pass
     return False
 
-def generate_protected_child_id() -> str:
+def generate_protected_child_id(state: Optional[str] = None, district: Optional[str] = None) -> str:
+    from app.utils.india_locations import get_location_codes
+    st_code, dst_code = get_location_codes(state, district)
     chars = string.ascii_uppercase + string.digits
-    random_part = ''.join(secrets.choice(chars) for _ in range(8))
-    return f"C{random_part}"
+    random_part = ''.join(secrets.choice(chars) for _ in range(5))
+    return f"C-{st_code}-{dst_code}-{random_part}"
 
 def generate_protected_case_id() -> str:
     random_part = ''.join(secrets.choice(string.digits) for _ in range(8))

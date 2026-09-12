@@ -130,6 +130,27 @@ async def dev_lifespan(app: FastAPI):
             ("adult_child_links", "vetted_by_moderator_id", "CHAR(32)"),
             ("adult_child_links", "vetted_at", "DATETIME"),
             ("adult_child_links", "vetting_notes", "TEXT"),
+            # Foundation Hardening (Phase 8.5)
+            ("users", "state", "VARCHAR(100)"),
+            ("users", "district", "VARCHAR(100)"),
+            ("users", "pin_code", "VARCHAR(10)"),
+            ("users", "latitude", "FLOAT"),
+            ("users", "longitude", "FLOAT"),
+            ("children", "state", "VARCHAR(100)"),
+            ("children", "district", "VARCHAR(100)"),
+            ("children", "pin_code", "VARCHAR(10)"),
+            ("children", "school_name", "VARCHAR(200)"),
+            ("children", "grade", "VARCHAR(50)"),
+            ("children", "is_domestic_safety_mode", "BOOLEAN DEFAULT 0"),
+            ("children", "setup_path", "VARCHAR(30) DEFAULT 'COLLABORATIVE'"),
+            ("children", "linked_via_adult_email", "VARCHAR(255)"),
+            ("adults", "state", "VARCHAR(100)"),
+            ("adults", "district", "VARCHAR(100)"),
+            ("adults", "pin_code", "VARCHAR(10)"),
+            ("moderators", "jurisdiction_state", "VARCHAR(100)"),
+            ("moderators", "jurisdiction_district", "VARCHAR(100)"),
+            ("moderators", "organisation", "VARCHAR(200)"),
+            ("moderators", "pocso_cert_number", "VARCHAR(100)"),
         ]
         for table_name, col_name, col_def in migrations:
             try:

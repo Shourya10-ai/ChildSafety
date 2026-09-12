@@ -19,6 +19,14 @@ class Child(Base, TimestampMixin):
     language_preference: Mapped[str] = mapped_column(String(10), default='en')
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    state: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    district: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    pin_code: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    school_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    grade: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    is_domestic_safety_mode: Mapped[bool] = mapped_column(Boolean, default=False)
+    setup_path: Mapped[str] = mapped_column(String(30), default="COLLABORATIVE")
+    linked_via_adult_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
 class Adult(Base, TimestampMixin):
     __tablename__ = "adults"
@@ -28,6 +36,9 @@ class Adult(Base, TimestampMixin):
     phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     emergency_contacts: Mapped[list | dict] = mapped_column(JSON, default=[])
     address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    state: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    district: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    pin_code: Mapped[str | None] = mapped_column(String(10), nullable=True)
 
 class AdultChildLink(Base):
     __tablename__ = "adult_child_links"

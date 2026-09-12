@@ -30,14 +30,55 @@ async def get_or_assign_moderator_for_child(db: AsyncSession, child_id: uuid.UUI
         if mod:
             return mod
 
-    # 2. If no assignment, find available moderator with lowest workload
-    res = await db.execute(
-        select(Moderator)
-        .where(and_(Moderator.is_available == True, Moderator.active_case_count < Moderator.max_cases))
-        .order_by(Moderator.active_case_count.asc())
-        .limit(1)
-    )
-    moderator = res.scalar_one_or_none()
+    # 2. If no assignment, find available moderator using Location Priority:
+    # Priority 1: District match -> Priority 2: State match -> Priority 3: National pool
+    from app.models.child import Child
+    child_res = await db.execute(select(Child).where(Child.id == child_id))
+    child = child_res.scalar_one_or_none()
+    
+    moderator = None
+    if child and child.district:
+        # Priority 1: District match
+        res = await db.execute(
+            select(Moderator)
+            .where(
+                and_(
+                    Moderator.is_available == True,
+                    Moderator.active_case_count < Moderator.max_cases,
+                    Moderator.jurisdiction_district.ilike(child.district.strip())
+                )
+            )
+            .order_by(Moderator.active_case_count.asc())
+            .limit(1)
+        )
+        moderator = res.scalar_one_or_none()
+
+    if not moderator and child and child.state:
+        # Priority 2: State match
+        res = await db.execute(
+            select(Moderator)
+            .where(
+                and_(
+                    Moderator.is_available == True,
+                    Moderator.active_case_count < Moderator.max_cases,
+                    Moderator.jurisdiction_state.ilike(child.state.strip())
+                )
+            )
+            .order_by(Moderator.active_case_count.asc())
+            .limit(1)
+        )
+        moderator = res.scalar_one_or_none()
+
+    if not moderator:
+        # Priority 3: National pool fallback (any available moderator with least load)
+        res = await db.execute(
+            select(Moderator)
+            .where(and_(Moderator.is_available == True, Moderator.active_case_count < Moderator.max_cases))
+            .order_by(Moderator.active_case_count.asc())
+            .limit(1)
+        )
+        moderator = res.scalar_one_or_none()
+
     if moderator:
         # Create new permanent assignment
         new_assignment = Assignment(

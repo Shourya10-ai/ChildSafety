@@ -10,7 +10,16 @@ data class RegisterRequest(
     @Json(name = "full_name") val fullName: String,
     val role: String,
     val phone: String? = null,
-    @Json(name = "language_preference") val languagePreference: String = "en"
+    @Json(name = "language_preference") val languagePreference: String = "en",
+    val state: String? = null,
+    val district: String? = null,
+    @Json(name = "pin_code") val pinCode: String? = null,
+    @Json(name = "date_of_birth") val dateOfBirth: String? = null,
+    @Json(name = "setup_path") val setupPath: String? = null,
+    @Json(name = "school_name") val schoolName: String? = null,
+    @Json(name = "linked_via_adult_email") val linkedViaAdultEmail: String? = null,
+    @Json(name = "relationship_to_child") val relationshipToChild: String? = null,
+    val address: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -25,7 +34,12 @@ data class TokenResponse(
     @Json(name = "refresh_token") val refreshToken: String,
     @Json(name = "token_type") val tokenType: String,
     val role: String,
-    @Json(name = "user_id") val userId: String
+    @Json(name = "user_id") val userId: String,
+    @Json(name = "protected_child_id") val protectedChildId: String? = null,
+    @Json(name = "is_domestic_safety_mode") val isDomesticSafetyMode: Boolean? = null,
+    @Json(name = "setup_path") val setupPath: String? = null,
+    val state: String? = null,
+    val district: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -46,7 +60,13 @@ data class UserProfile(
     val role: String,
     val phone: String?,
     @Json(name = "language_preference") val languagePreference: String,
-    @Json(name = "is_active") val isActive: Boolean
+    @Json(name = "is_active") val isActive: Boolean,
+    val state: String? = null,
+    val district: String? = null,
+    @Json(name = "pin_code") val pinCode: String? = null,
+    @Json(name = "protected_child_id") val protectedChildId: String? = null,
+    @Json(name = "is_domestic_safety_mode") val isDomesticSafetyMode: Boolean? = null,
+    @Json(name = "setup_path") val setupPath: String? = null
 )
 
 @JsonClass(generateAdapter = true)

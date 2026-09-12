@@ -36,6 +36,16 @@ class AuthViewModel @Inject constructor(
     val phoneState = MutableStateFlow("")
     val isPasswordVisible = MutableStateFlow(false)
 
+    // Foundation Hardening: Mandatory Base Info & Setup Paths
+    val stateState = MutableStateFlow("Delhi")
+    val districtState = MutableStateFlow("Delhi")
+    val pinCodeState = MutableStateFlow("")
+    val dobState = MutableStateFlow("")
+    val childSetupPath = MutableStateFlow("SOLO") // "SOLO" or "COLLABORATIVE"
+    val parentEmailState = MutableStateFlow("")
+    val schoolNameState = MutableStateFlow("")
+    val addressState = MutableStateFlow("")
+
     fun login() {
         val errorMsg = validateLoginForm()
         if (errorMsg != null) {
@@ -75,7 +85,15 @@ class AuthViewModel @Inject constructor(
                 password = passwordState.value,
                 fullName = fullNameState.value,
                 role = selectedRole.value,
-                phone = phoneState.value.ifBlank { null }
+                phone = phoneState.value.ifBlank { null },
+                state = stateState.value.ifBlank { null },
+                district = districtState.value.ifBlank { null },
+                pinCode = pinCodeState.value.ifBlank { null },
+                dateOfBirth = dobState.value.ifBlank { null },
+                setupPath = if (selectedRole.value == "child") childSetupPath.value else null,
+                schoolName = schoolNameState.value.ifBlank { null },
+                linkedViaAdultEmail = if (selectedRole.value == "child" && childSetupPath.value == "COLLABORATIVE") parentEmailState.value.ifBlank { null } else null,
+                address = addressState.value.ifBlank { null }
             )
             when (val result = authRepository.register(request)) {
                 is AuthResult.Success -> {
@@ -126,6 +144,11 @@ class AuthViewModel @Inject constructor(
         if (!passwordState.value.any { it.isUpperCase() }) return "Password must contain at least one uppercase letter"
         if (!passwordState.value.any { it.isDigit() }) return "Password must contain at least one digit"
         if (passwordState.value != confirmPasswordState.value) return "Passwords do not match"
+        if (stateState.value.isBlank()) return "Please enter your state"
+        if (districtState.value.isBlank()) return "Please enter your district"
+        if (selectedRole.value == "child" && childSetupPath.value == "COLLABORATIVE" && parentEmailState.value.isBlank()) {
+            return "Please enter parent/guardian email to link"
+        }
         return null
     }
 }

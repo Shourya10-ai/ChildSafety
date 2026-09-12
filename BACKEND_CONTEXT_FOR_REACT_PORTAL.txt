@@ -1,0 +1,639 @@
+================================================================================
+  CHILD SAFETY PLATFORM — BACKEND CONNECTIVITY CONTEXT
+  For React Web Portal Integration (Person 2)
+  Generated: 2026-09-12
+================================================================================
+
+This document is the complete backend integration reference for the React
+moderator/admin web portal. Share it with your AI coding agent (Cursor, Copilot,
+etc.) so it has full context before writing any API calls or WebSocket code.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. LIVE BACKEND URL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Base URL (REST):   https://squishier-clunky-neuter.ngrok-free.dev
+  WebSocket:         wss://squishier-clunky-neuter.ngrok-free.dev/ws
+  Swagger / Docs:    https://squishier-clunky-neuter.ngrok-free.dev/docs
+  ReDoc:             https://squishier-clunky-neuter.ngrok-free.dev/redoc
+
+  IMPORTANT — Ngrok Browser Warning:
+  Every HTTP/HTTPS request from a browser must include this header or ngrok
+  will return an HTML interstitial page instead of JSON:
+
+    ngrok-skip-browser-warning: 1
+
+  Example axios global config:
+    axios.defaults.headers.common['ngrok-skip-browser-warning'] = '1';
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. AUTHENTICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Auth scheme: JWT Bearer tokens
+  All protected endpoints require header:
+    Authorization: Bearer <access_token>
+
+  Token lifetime: ~60 minutes (access), 7 days (refresh)
+
+  ── Login ──────────────────────────────────────────────────────────────────
+  POST /api/v1/auth/login
+  Content-Type: application/json
+  Body: { "email": "...", "password": "..." }
+  Response: {
+    "access_token": "eyJ...",
+    "refresh_token": "eyJ...",
+    "token_type": "bearer",
+    "user": { "id": "uuid", "email": "...", "role": "...", ... }
+  }
+
+  ── Register ───────────────────────────────────────────────────────────────
+  POST /api/v1/auth/register
+  Body: {
+    "email": "string",
+    "password": "string",
+    "full_name": "string",
+    "role": "child" | "adult" | "moderator" | "authority" | "admin",
+    "phone": "string (optional)",
+    "language_preference": "en" | "hi" (optional)
+  }
+
+  ── Refresh Token ──────────────────────────────────────────────────────────
+  POST /api/v1/auth/refresh
+  Body: { "refresh_token": "eyJ..." }
+
+  ── Logout ─────────────────────────────────────────────────────────────────
+  POST /api/v1/auth/logout
+  Headers: Authorization: Bearer <access_token>
+  Body: { "refresh_token": "eyJ..." }
+
+  ── Get Current User ───────────────────────────────────────────────────────
+  GET /api/v1/auth/me
+  Headers: Authorization: Bearer <access_token>
+  Response: { "id", "email", "full_name", "role", "phone", ... }
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. SEEDED CREDENTIALS (ready to use for the React portal)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Moderator:
+    Email:    moderator@safety.gov.in
+    Password: Moderator@123
+    Role:     moderator
+    Access:   Cases, Incidents, SOS, Reports, Notifications, Evidence, Children
+
+  Admin:
+    Email:    admin@safety.gov.in
+    Password: Admin@123
+    Role:     admin
+    Access:   Full access to all endpoints including user management
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. USER ROLES & PERMISSIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Role         | Description
+  -------------|----------------------------------------------------------
+  child        | End user (child). Can trigger SOS, submit reports, chat.
+  adult        | Guardian/parent. Can view linked child's alerts and status.
+  moderator    | Safety moderator. Can manage cases, incidents, evidence.
+  authority    | Law enforcement / CWC / NCPCR. Can view and escalate.
+  admin        | Full platform administrator.
+
+  Most web portal endpoints require role: moderator, authority, or admin.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. ALL REST API ENDPOINTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+All routes are prefixed with: /api/v1/
+
+──────────────────────────────────────────────────────────────────────────────
+5.1  AUTHENTICATION   /api/v1/auth/
+──────────────────────────────────────────────────────────────────────────────
+  POST   /auth/register           Register new user
+  POST   /auth/login              Login → returns access + refresh tokens
+  POST   /auth/refresh            Refresh access token
+  POST   /auth/logout             Invalidate tokens
+  GET    /auth/me                 Get logged-in user profile
+  PUT    /auth/me                 Update logged-in user profile
+
+──────────────────────────────────────────────────────────────────────────────
+5.2  CASES   /api/v1/cases/
+──────────────────────────────────────────────────────────────────────────────
+  The central entity of the platform. Every SOS, report, and incident attaches
+  to a child's active Case. Cases flow through a human-gated state machine.
+
+  GET    /cases/                  List cases (filter by status, priority, child_id)
+    Query params: status, priority, child_id, moderator_id, limit, offset
+
+  POST   /cases/                  Create new case
+    Roles: moderator, admin, authority
+    Body: { "child_id": uuid, "title": str, "description": str,
+            "priority": "low"|"medium"|"high"|"critical", "risk_level": str }
+
+  GET    /cases/{id}              Get case detail (with incidents, notes, moderator)
+
+  PUT    /cases/{id}              Update case fields
+    Roles: moderator, admin, authority
+
+  POST   /cases/{id}/notes        Add moderator note to a case
+    Roles: moderator, admin
+    Body: { "note_type": "observation"|"action"|"escalation", "content": str }
+
+  GET    /cases/{id}/notes        Get all notes on a case
+
+  POST   /cases/{id}/escalate     Escalate a case
+    Roles: moderator, admin
+    Body: { "reason": str, "target_authority": str }
+
+  POST   /cases/{id}/transition   Transition case status (HUMAN-GATED GATE)
+    Roles: moderator, admin, authority
+    Body: {
+      "to_status": "OPEN"|"ASSIGNED"|"MODERATOR_REVIEW"|"ESCALATED"|
+                   "AUTHORITY_NOTIFIED"|"CWC_REFERRED"|"CLOSED"|"DISMISSED",
+      "reason": str,
+      "statutory_reference": str (optional, e.g. "POCSO Act 2012 Sec 11"),
+      "dismissal_category": str (optional, required when dismissing)
+    }
+    NOTE: All state transitions require a moderator human decision.
+    The backend enforces this — no auto-transitions without actor_id.
+
+  POST   /cases/check-sla         Trigger SLA enforcement sweep
+    Roles: moderator, admin, authority
+    Checks all active cases for SLA breach and auto-escalates overdue ones.
+
+  ── Case Status Values ──────────────────────────────────────────────────────
+  OPEN → ASSIGNED → MODERATOR_REVIEW → ESCALATED → AUTHORITY_NOTIFIED →
+  CWC_REFERRED → CLOSED
+                                     ↘ DISMISSED (with mandatory reason)
+
+  ── Case Priority Values ────────────────────────────────────────────────────
+  low | medium | high | critical
+
+──────────────────────────────────────────────────────────────────────────────
+5.3  SOS EMERGENCY   /api/v1/sos/
+──────────────────────────────────────────────────────────────────────────────
+  POST   /sos/trigger             Trigger an emergency SOS
+    Auth: Optional (can be anonymous)
+    Rate Limited: Yes (Redis sliding window, abuse-resistant)
+    Body: {
+      "latitude": float,
+      "longitude": float,
+      "accuracy": float (optional),
+      "location_address": str (optional),
+      "message": str (optional),
+      "child_id": uuid (optional),
+      "is_silent_duress": bool (default: false),
+      "bypass_primary_guardians": bool (default: false)
+    }
+    NOTE: is_silent_duress=true routes alerts ONLY to vetted alternate trusted
+    adults (not household guardians). Used in domestic abuse scenarios.
+
+  PUT    /sos/{id}/resolve        Resolve an active SOS
+    Auth: Optional
+    Body: { "message": str (optional) }
+
+  GET    /sos/active              Get all active SOS events
+    Query: limit (default 50)
+
+  GET    /sos/nearby              Get SOS events near a location
+    Query: latitude, longitude, radius_km (default 10.0)
+
+  GET    /sos/{id}                Get specific SOS event detail
+
+  ── SOS Response Object ─────────────────────────────────────────────────────
+  {
+    "id": uuid,
+    "child_id": uuid,
+    "case_id": uuid,
+    "latitude": float,
+    "longitude": float,
+    "location_address": str,
+    "status": "ACTIVE" | "RESOLVED",
+    "message": str,
+    "child_name": str,
+    "is_silent_duress": bool,
+    "routed_to_alternate_adults_only": bool,
+    "notified_guardians_count": int,
+    "created_at": ISO datetime,
+    "resolved_at": ISO datetime | null
+  }
+
+──────────────────────────────────────────────────────────────────────────────
+5.4  INCIDENTS   /api/v1/incidents/
+──────────────────────────────────────────────────────────────────────────────
+  Incidents are discrete safety events (grooming attempt, cyberbullying,
+  physical threat) that attach to Cases.
+
+  GET    /incidents/active        Get recent active incidents (dashboard feed)
+    Auth: Required
+    Query: limit
+
+  GET    /incidents/{id}          Get incident detail
+
+  POST   /incidents/              Create incident
+    Auth: Required
+    Body: {
+      "case_id": uuid,
+      "incident_type": "grooming"|"cyberbullying"|"physical_threat"|
+                       "sexual_abuse"|"domestic_violence"|"other",
+      "severity": "low"|"medium"|"high"|"critical",
+      "description": str,
+      "occurred_at": ISO datetime (optional)
+    }
+
+  PUT    /incidents/{id}/verify   Verify an incident (moderator action)
+    Roles: moderator, admin, authority
+    Query: trust_level (default "moderator_verified")
+
+──────────────────────────────────────────────────────────────────────────────
+5.5  REPORTS   /api/v1/reports/
+──────────────────────────────────────────────────────────────────────────────
+  Anonymous or authenticated safety reports. Rate-limited and hash-deduplicated.
+
+  POST   /reports/                Submit a safety report
+    Auth: Optional (anonymous supported)
+    Rate Limited: Yes (Redis, anti-spam)
+    Body: {
+      "category": "grooming"|"cyberbullying"|"physical_abuse"|
+                  "sexual_abuse"|"online_exploitation"|"other",
+      "content": str,
+      "details": str (optional),
+      "child_id": uuid (optional),
+      "contact_info": str (optional),
+      "is_anonymous": bool
+    }
+
+  GET    /reports/                List all reports
+    Roles: moderator, admin, authority
+    Query: limit, offset
+
+  GET    /reports/{id}            Get specific report
+    Roles: moderator, admin, authority
+
+──────────────────────────────────────────────────────────────────────────────
+5.6  NOTIFICATIONS   /api/v1/notifications/
+──────────────────────────────────────────────────────────────────────────────
+  GET    /notifications/          Get current user's notifications + unread count
+    Auth: Required
+    Query: limit
+    Response: { "items": [...], "unread_count": int }
+
+  PUT    /notifications/{id}/read Mark a single notification as read
+  PUT    /notifications/read-all  Mark all notifications as read
+    Response: { "message": str, "updated_count": int }
+
+  ── Notification Object ─────────────────────────────────────────────────────
+  {
+    "id": uuid,
+    "notification_type": "SOS_ALERT"|"CASE_UPDATE"|"INCIDENT_FLAGGED"|
+                         "ESCALATION"|"SYSTEM",
+    "title": str,
+    "body": str,
+    "is_read": bool,
+    "created_at": ISO datetime
+  }
+
+──────────────────────────────────────────────────────────────────────────────
+5.6.1 CHAT & LIVE MESSAGING   /api/v1/chat/
+──────────────────────────────────────────────────────────────────────────────
+  Live two-way confidential communication between child and assigned protector.
+
+  GET    /chat/cases/{case_id}/messages   Get message history for a case
+    Auth: Required (moderator, child, authority, admin)
+    Query params: limit (default 50), offset (default 0)
+    Response: {
+      "case_id": uuid,
+      "child_id": uuid,
+      "protected_case_id": str,
+      "assigned_moderator_name": str,
+      "messages": [
+        {
+          "id": uuid,
+          "case_id": uuid,
+          "sender_id": uuid,
+          "sender_role": "child"|"moderator"|"authority"|"admin",
+          "sender_name": str,
+          "content": str,
+          "message_type": "text",
+          "is_read": bool,
+          "created_at": ISO datetime
+        }
+      ],
+      "total_count": int
+    }
+
+  POST   /chat/cases/{case_id}/messages   Send message in a case
+    Auth: Required
+    Body: { "content": str, "message_type": "text" (optional) }
+    Dispatches real-time CHAT_MESSAGE WebSocket event to recipient instantly!
+
+  PUT    /chat/cases/{case_id}/read       Mark unread messages as read
+    Auth: Required
+    Response: { "message": str, "read_count": int }
+
+  ── Child-friendly shortcuts (child mobile app) ─────────────────────────────
+  GET    /chat/my-case/messages           Child gets active support case chat
+  POST   /chat/my-case/messages           Child sends message to active protector
+
+──────────────────────────────────────────────────────────────────────────────
+5.7  CHILDREN   /api/v1/children/
+──────────────────────────────────────────────────────────────────────────────
+  POST   /children/               Create child profile
+  GET    /children/me             Get my child profile (if role=child)
+  GET    /children/{id}           Get child profile
+  PUT    /children/{id}           Update child profile
+  POST   /children/link           Link adult to child
+    Body: { "protected_child_id": uuid, "relationship": "parent"|"guardian"|"other" }
+
+  GET    /children/{id}/adults    Get adults linked to a child
+
+  POST   /children/{id}/nominate-adult    Nominate an outside trusted adult
+    Auth: child or moderator only
+    Body: {
+      "adult_identifier": "email or phone of nominee",
+      "relationship_label": "aunt"|"teacher"|"counselor"|etc,
+      "reason": str (confidential, optional)
+    }
+    NOTE: All nominations enter PENDING_VETTING status. A moderator must approve.
+
+  PUT    /children/{id}/nominate-adult/{link_id}/review   Review nomination
+    Roles: moderator, admin
+    Body: { "approved": bool, "vetting_notes": str }
+
+  GET    /children/{id}/trusted-adults    List vetted trusted adults for child
+
+──────────────────────────────────────────────────────────────────────────────
+5.8  EVIDENCE   /api/v1/evidence/
+──────────────────────────────────────────────────────────────────────────────
+  POST   /evidence/upload         Upload evidence file (screenshot, audio, doc)
+    Auth: Required
+    Content-Type: multipart/form-data
+    Fields: file (File), incident_id (UUID, optional), report_id (UUID, optional)
+    NOTE: SHA-256 hash is computed and stored for chain-of-custody.
+
+  GET    /evidence/{id}/verify-custody   Verify tamper-evident custody chain
+    Returns SHA-256 block-linked integrity report per BSA 2023 Sec 63.
+
+──────────────────────────────────────────────────────────────────────────────
+5.9  USERS   /api/v1/users/
+──────────────────────────────────────────────────────────────────────────────
+  GET    /users/me                Get current user
+  PUT    /users/me                Update current user
+  GET    /users/{id}              Get any user by ID
+    Roles: moderator, authority, admin
+
+──────────────────────────────────────────────────────────────────────────────
+5.10  CONSENT   /api/v1/consent/
+──────────────────────────────────────────────────────────────────────────────
+  (DPDP Act 2023 / COPPA-aligned consent management)
+  See /docs for full schema.
+
+──────────────────────────────────────────────────────────────────────────────
+5.11  ADULTS   /api/v1/adults/
+──────────────────────────────────────────────────────────────────────────────
+  Adult guardian profile CRUD.
+  See /docs for full schema.
+
+──────────────────────────────────────────────────────────────────────────────
+5.12  HEALTH
+──────────────────────────────────────────────────────────────────────────────
+  GET    /                        Health check
+    Response: { "status": "online", "message": "Child Safety Platform Backend is running!" }
+
+  GET    /api/v1/health/          Detailed health (DB, Redis, AI server status)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. WEBSOCKET — REAL-TIME EVENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Endpoint:  wss://squishier-clunky-neuter.ngrok-free.dev/ws?token=<access_token>
+
+  The JWT access_token is passed as a query parameter for WebSocket auth.
+
+  ── Connection Handshake ────────────────────────────────────────────────────
+  On connect, server sends:
+  {
+    "event": "CONNECTED",
+    "user_id": "uuid",
+    "role": "moderator",
+    "channels": ["cs:emergency", "cs:user:<user_id>"]
+  }
+
+  ── Ping / Keepalive ────────────────────────────────────────────────────────
+  Send: { "action": "ping" }
+  Receive: { "event": "pong" }
+  Recommended: send ping every 30 seconds to keep the connection alive.
+
+  ── Event Types the Portal will receive ─────────────────────────────────────
+  All events follow this envelope:
+  {
+    "event": "EVENT_TYPE",
+    "channel": "cs:emergency" | "cs:role:moderator" | "cs:user:<id>",
+    "data": { ... event-specific payload ... },
+    "timestamp": "ISO datetime"
+  }
+
+  EVENT_TYPE          | Trigger                        | Payload
+  --------------------|--------------------------------|----------------------
+  SOS_TRIGGERED       | Child presses SOS button or    | SOS object (see 5.3)
+                      | silent duress hardware trigger  |
+  SOS_RESOLVED        | SOS is resolved                | SOS object
+  CASE_STATUS_CHANGED | Moderator transitions a case   | { case_id, from_status,
+                      |                                | to_status, reason,
+                      |                                | actor_id }
+  CHAT_MESSAGE        | Incoming message from child or | { case_id, protected_case_id,
+                      | safety protector               | message: { id, content,
+                      |                                | sender_id, sender_role, ... } }
+  CONNECTED           | Connection established         | { user_id, role }
+  pong                | Response to ping               | (empty)
+
+  ── React Example ───────────────────────────────────────────────────────────
+  const token = localStorage.getItem('access_token');
+  const ws = new WebSocket(
+    `wss://squishier-clunky-neuter.ngrok-free.dev/ws?token=${token}`
+  );
+
+  ws.onopen = () => {
+    console.log('Connected to Child Safety real-time feed');
+    setInterval(() => ws.send(JSON.stringify({ action: 'ping' })), 30000);
+  };
+
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    if (msg.event === 'SOS_TRIGGERED') {
+      // Show emergency alert in dashboard
+      showEmergencyBanner(msg.data);
+    }
+    if (msg.event === 'CASE_STATUS_CHANGED') {
+      // Refresh case list or update case card
+      refreshCaseList();
+    }
+  };
+
+  ws.onclose = () => {
+    // Reconnect with exponential backoff
+  };
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. KEY ARCHITECTURAL RULES FOR THE REACT PORTAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. HUMAN-IN-THE-LOOP IS MANDATORY
+     No case moves from MODERATOR_REVIEW to any downstream status without a
+     logged-in moderator explicitly calling POST /cases/{id}/transition.
+     The portal MUST show a confirmation dialog before calling this endpoint.
+     Never auto-transition cases in the frontend.
+
+  2. SILENT DURESS SOS
+     When is_silent_duress=true in a SOS_TRIGGERED WebSocket event:
+     - Display with RED CRITICAL alert (different from normal SOS)
+     - Label it "SILENT DURESS — Domestic abuse scenario"
+     - Do NOT notify household guardians (already handled by backend)
+     - Escalate immediately to trusted adults + moderator
+
+  3. SLA AWARENESS
+     Call POST /cases/check-sla periodically (e.g. on portal load) to trigger
+     SLA enforcement. Cases with:
+       SLA Tier | Breach Time
+       SOS      | 15 minutes
+       CRITICAL | 2 hours
+     are auto-reassigned to available moderators by the backend.
+
+  4. EVIDENCE CHAIN OF CUSTODY
+     Before displaying evidence to a moderator, call:
+       GET /evidence/{id}/verify-custody
+     And show the integrity status. If tampered, mark with a warning banner.
+     Evidence is linked to Indian law (BSA 2023 Sec 63) for court admissibility.
+
+  5. ANONYMOUS REPORTS ARE RATE-LIMITED
+     The backend Redis rate limiter allows 5 reports per IP per 10 minutes.
+     If the portal receives HTTP 429, show "Too many reports — try again later."
+
+  6. TRUSTED ADULT NOMINATIONS NEED MODERATOR APPROVAL
+     After a child nominates an adult, the moderator portal must show a
+     "Pending Vetting" queue and allow approve/reject via:
+       PUT /children/{child_id}/nominate-adult/{link_id}/review
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. RECOMMENDED REACT PORTAL PAGE STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Page                | Primary Endpoints
+  --------------------|---------------------------------------------------
+  Login               | POST /auth/login
+  Dashboard           | GET /sos/active, GET /incidents/active,
+                      | GET /cases/ (status=OPEN,ASSIGNED),
+                      | WS: SOS_TRIGGERED, CASE_STATUS_CHANGED
+  Case Management     | GET /cases/, GET /cases/{id},
+                      | POST /cases/{id}/transition, POST /cases/{id}/notes,
+                      | POST /cases/{id}/escalate, POST /cases/check-sla
+  Incident Feed       | GET /incidents/active, PUT /incidents/{id}/verify
+  Reports Queue       | GET /reports/, GET /reports/{id}
+  SOS Map             | GET /sos/active, GET /sos/nearby
+  Evidence Viewer     | GET /evidence/{id}/verify-custody, POST /evidence/upload
+  Trusted Adult Queue | GET /children/{id}/trusted-adults,
+                      | PUT /children/{id}/nominate-adult/{link_id}/review
+  Notifications Bell  | GET /notifications/, PUT /notifications/read-all
+  User Management     | GET /users/{id}, GET /auth/me
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9. ERROR CODES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  HTTP Code | Meaning
+  ----------|-------------------------------------------------------------
+  200       | OK
+  201       | Created successfully
+  400       | Bad request / validation error (see detail field)
+  401       | Missing or expired token → redirect to login
+  403       | Insufficient role permissions
+  404       | Resource not found
+  422       | Unprocessable entity (Pydantic schema validation failed)
+  429       | Rate limit exceeded (anonymous reports or SOS flood)
+  500       | Server error
+
+  All error responses have shape: { "detail": "error message" }
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. QUICK START — AXIOS CONFIG (React)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // api.js
+  import axios from 'axios';
+
+  const api = axios.create({
+    baseURL: 'https://squishier-clunky-neuter.ngrok-free.dev',
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': '1',   // REQUIRED — prevents ngrok interstitial
+    },
+  });
+
+  // Auto-attach JWT on every request
+  api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('access_token');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  });
+
+  // Auto-refresh on 401
+  api.interceptors.response.use(
+    (res) => res,
+    async (err) => {
+      if (err.response?.status === 401) {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+          try {
+            const res = await axios.post(
+              'https://squishier-clunky-neuter.ngrok-free.dev/api/v1/auth/refresh',
+              { refresh_token: refreshToken },
+              { headers: { 'ngrok-skip-browser-warning': '1' } }
+            );
+            localStorage.setItem('access_token', res.data.access_token);
+            err.config.headers.Authorization = `Bearer ${res.data.access_token}`;
+            return api.request(err.config);
+          } catch {
+            localStorage.clear();
+            window.location.href = '/login';
+          }
+        }
+      }
+      return Promise.reject(err);
+    }
+  );
+
+  export default api;
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11. BACKEND TECHNOLOGY STACK (for AI agent context)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Framework:     FastAPI (Python 3.12) with async SQLAlchemy
+  Database:      SQLite (development) → PostgreSQL (production)
+  Auth:          JWT (HS256), Bcrypt password hashing, Redis token blacklist
+  Cache / RT:    Redis (rate limiting, pub/sub, WebSocket fanout)
+  File Storage:  Local filesystem (dev) → MinIO / S3 (production)
+  AI Server:     Separate FastAPI service at http://localhost:8001
+                   POST /api/v1/analyze/text  (NLP safety analysis)
+                   POST /api/v1/rag/guidance   (statutory guidance RAG)
+  Indian Laws:   POCSO Act 2012, Bharatiya Nyaya Sanhita 2023,
+                 IT Act 2000, DPDP Act 2023, BSA 2023
+  Maps:          Google Maps API key: AIzaSyBmKfLb1BNXYkj4MmhsS8aTbPPWfE97Yaw
+                   (embed maps for SOS location display)
+
+================================================================================
+  END OF BACKEND CONNECTIVITY CONTEXT
+  Full interactive API docs: https://squishier-clunky-neuter.ngrok-free.dev/docs
+================================================================================

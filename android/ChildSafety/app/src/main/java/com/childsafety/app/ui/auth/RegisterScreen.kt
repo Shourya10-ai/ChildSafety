@@ -1,16 +1,19 @@
 package com.childsafety.app.ui.auth
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -35,6 +38,15 @@ fun RegisterScreen(
     val selectedRole by viewModel.selectedRole.collectAsState()
     val isPasswordVisible by viewModel.isPasswordVisible.collectAsState()
 
+    // Location & Setup Path state
+    val stateVal by viewModel.stateState.collectAsState()
+    val districtVal by viewModel.districtState.collectAsState()
+    val pinCodeVal by viewModel.pinCodeState.collectAsState()
+    val dobVal by viewModel.dobState.collectAsState()
+    val setupPathVal by viewModel.childSetupPath.collectAsState()
+    val parentEmailVal by viewModel.parentEmailState.collectAsState()
+    val schoolNameVal by viewModel.schoolNameState.collectAsState()
+
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
             uiState.userRole?.let { onRegisterSuccess(it) }
@@ -44,7 +56,7 @@ fun RegisterScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Create Account") },
+                title = { Text("Account Setup & Registration") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateToLogin) {
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
@@ -57,11 +69,111 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // 1. Role Selector
+                Text("Select Account Type", style = MaterialTheme.typography.titleMedium, modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FilterChip(
+                        selected = selectedRole == "child",
+                        onClick = { viewModel.selectedRole.value = "child" },
+                        label = { Text("🧒 Child Profile") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = selectedRole == "adult",
+                        onClick = { viewModel.selectedRole.value = "adult" },
+                        label = { Text("👨 Adult Guardian") },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
+
+                // 2. Child Sub-Path: Domestic/Solo vs Collaborative
+                if (selectedRole == "child") {
+                    Text(
+                        "How are you setting up this profile?",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.childSetupPath.value = "SOLO" },
+                        shape = RoundedCornerShape(12.dp),
+                        border = if (setupPathVal == "SOLO") BorderStroke(2.dp, MaterialTheme.colorScheme.error) else null,
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (setupPathVal == "SOLO") MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("🔴 Solo / Domestic Danger", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "I am setting this up alone. Household adults are bypassed and will NOT receive my alerts. A local safety protector will be assigned directly.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.childSetupPath.value = "COLLABORATIVE" },
+                        shape = RoundedCornerShape(12.dp),
+                        border = if (setupPathVal == "COLLABORATIVE") BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (setupPathVal == "COLLABORATIVE") MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("🟢 With a Parent / Guardian", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "My parent or trusted adult is helping me. Link directly to their account now.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+
+                    // If Collaborative, ask for Parent Email
+                    if (setupPathVal == "COLLABORATIVE") {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = parentEmailVal,
+                            onValueChange = { viewModel.parentEmailState.value = it },
+                            label = { Text("Parent / Guardian's Account Email") },
+                            placeholder = { Text("parent@example.com") },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            singleLine = true,
+                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                Divider()
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 3. Mandatory Base Info Section
+                Text("Base Information", style = MaterialTheme.typography.titleMedium, modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = fullName,
@@ -70,22 +182,24 @@ fun RegisterScreen(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = email,
                     onValueChange = { viewModel.emailState.value = it },
-                    label = { Text("Email") },
+                    label = {
+                        Text(if (selectedRole == "child" && setupPathVal == "SOLO") "Personal Private Email (Not Family Email)" else "Email Address")
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     singleLine = true
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = password,
                     onValueChange = { viewModel.passwordState.value = it },
-                    label = { Text("Password") },
+                    label = { Text("Password (Min 8 chars, 1 uppercase, 1 digit)") },
                     modifier = Modifier.fillMaxWidth(),
                     visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -97,7 +211,7 @@ fun RegisterScreen(
                     },
                     singleLine = true
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = confirmPassword,
@@ -108,37 +222,83 @@ fun RegisterScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     singleLine = true
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Text("Select Role", style = MaterialTheme.typography.titleMedium, modifier = Modifier.fillMaxWidth())
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    FilterChip(
-                        selected = selectedRole == "child",
-                        onClick = { viewModel.selectedRole.value = "child" },
-                        label = { Text("\uD83D\uDC66 Child") }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = { viewModel.phoneState.value = it },
+                        label = { Text("Phone") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        singleLine = true
                     )
-                    FilterChip(
-                        selected = selectedRole == "adult",
-                        onClick = { viewModel.selectedRole.value = "adult" },
-                        label = { Text("\uD83D\uDC68 Adult/Parent") }
+                    OutlinedTextField(
+                        value = dobVal,
+                        onValueChange = { viewModel.dobState.value = it },
+                        label = { Text("DOB (YYYY-MM-DD)") },
+                        placeholder = { Text("2012-05-15") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
                     )
                 }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedTextField(
-                    value = phone,
-                    onValueChange = { viewModel.phoneState.value = it },
-                    label = { Text("Phone (Optional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true
+                // 4. Mandatory Location Info (For Jurisdictional ID & Local Moderator Assignment)
+                Text(
+                    "Jurisdictional Location (For Local Protector Linking)",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = stateVal,
+                        onValueChange = { viewModel.stateState.value = it },
+                        label = { Text("State / UT") },
+                        placeholder = { Text("e.g. Maharashtra, Delhi") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = districtVal,
+                        onValueChange = { viewModel.districtState.value = it },
+                        label = { Text("District / City") },
+                        placeholder = { Text("e.g. Mumbai, South Delhi") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = pinCodeVal,
+                        onValueChange = { viewModel.pinCodeState.value = it },
+                        label = { Text("PIN Code (6 digits)") },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true
+                    )
+                    if (selectedRole == "child") {
+                        OutlinedTextField(
+                            value = schoolNameVal,
+                            onValueChange = { viewModel.schoolNameState.value = it },
+                            label = { Text("School Name (Optional)") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
 
                 uiState.error?.let {
                     Text(text = it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
                 Button(
@@ -151,7 +311,7 @@ fun RegisterScreen(
                     if (uiState.isLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                     } else {
-                        Text("Create Account", fontSize = 16.sp)
+                        Text("Complete Registration & Setup", fontSize = 16.sp)
                     }
                 }
 

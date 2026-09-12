@@ -7,7 +7,8 @@ import redis.asyncio as redis
 from app.core.dependencies import get_db, get_redis, get_current_active_user
 from app.schemas.auth import (
     RegisterRequest, LoginRequest, TokenResponse,
-    RefreshRequest, AccessTokenResponse, UserProfile, MessageResponse
+    RefreshRequest, AccessTokenResponse, UserProfile, MessageResponse,
+    ClaimChildAccountRequest
 )
 from app.schemas.user import UserUpdate
 from app.services.auth_service import AuthService
@@ -64,9 +65,36 @@ async def logout(
     await auth_service.logout(refresh_token_str, access_token)
     return MessageResponse(message="Successfully logged out")
 
+@router.post("/claim-child-account", response_model=TokenResponse)
+async def claim_child_account(
+    data: ClaimChildAccountRequest,
+    db: AsyncSession = Depends(get_db),
+    redis_client: redis.Redis = Depends(get_redis)
+):
+    """Claim an adult-initiated child profile and create user credentials for child."""
+    auth_service = AuthService(db, redis_client)
+    return await auth_service.claim_child_account(data)
+
 @router.get("/me", response_model=UserProfile)
-async def get_me(current_user: User = Depends(get_current_active_user)):
+async def get_me(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
     """Get current user profile."""
+    protected_child_id = None
+    is_domestic = None
+    setup_path = None
+    
+    if current_user.role == "child":
+        from app.models.child import Child
+        from sqlalchemy import select
+        c_res = await db.execute(select(Child).where(Child.user_id == current_user.id))
+        child = c_res.scalar_one_or_none()
+        if child:
+            protected_child_id = child.protected_child_id
+            is_domestic = child.is_domestic_safety_mode
+            setup_path = child.setup_path
+
     return UserProfile(
         id=str(current_user.id),
         email=current_user.email,
@@ -74,7 +102,13 @@ async def get_me(current_user: User = Depends(get_current_active_user)):
         role=str(current_user.role),
         phone=current_user.phone,
         language_preference=current_user.language_preference,
-        is_active=current_user.is_active
+        is_active=current_user.is_active,
+        state=current_user.state,
+        district=current_user.district,
+        pin_code=current_user.pin_code,
+        protected_child_id=protected_child_id,
+        is_domestic_safety_mode=is_domestic,
+        setup_path=setup_path
     )
 
 @router.put("/me", response_model=UserProfile)
@@ -95,6 +129,19 @@ async def update_me(
         
     await db.commit()
     await db.refresh(current_user)
+
+    protected_child_id = None
+    is_domestic = None
+    setup_path = None
+    if current_user.role == "child":
+        from app.models.child import Child
+        from sqlalchemy import select
+        c_res = await db.execute(select(Child).where(Child.user_id == current_user.id))
+        child = c_res.scalar_one_or_none()
+        if child:
+            protected_child_id = child.protected_child_id
+            is_domestic = child.is_domestic_safety_mode
+            setup_path = child.setup_path
     
     return UserProfile(
         id=str(current_user.id),
@@ -103,5 +150,11 @@ async def update_me(
         role=str(current_user.role),
         phone=current_user.phone,
         language_preference=current_user.language_preference,
-        is_active=current_user.is_active
+        is_active=current_user.is_active,
+        state=current_user.state,
+        district=current_user.district,
+        pin_code=current_user.pin_code,
+        protected_child_id=protected_child_id,
+        is_domestic_safety_mode=is_domestic,
+        setup_path=setup_path
     )

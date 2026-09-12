@@ -17,3 +17,8 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
     phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     language_preference: Mapped[str] = mapped_column(String(10), default='en')
     fcm_token: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    state: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    district: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    pin_code: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    latitude: Mapped[float | None] = mapped_column(nullable=True)
+    longitude: Mapped[float | None] = mapped_column(nullable=True)
