@@ -39,15 +39,15 @@ class AuthService:
                     detail="For your safety, solo domestic safety registration requires an independent email not linked to a parent/guardian."
                 )
 
-        # Direct Location / GPS Auto-Resolution
+        # Direct Location / GPS Auto-Resolution via live API
         if data.latitude is not None and data.longitude is not None and (not data.state or not data.district):
-            from app.utils.india_locations import reverse_geocode_coordinates
-            geo = reverse_geocode_coordinates(data.latitude, data.longitude)
-            if not data.state:
+            from app.utils.india_locations import fetch_reverse_geocode_api
+            geo = await fetch_reverse_geocode_api(data.latitude, data.longitude)
+            if not data.state and geo.get("state"):
                 data.state = geo.get("state")
-            if not data.district:
+            if not data.district and geo.get("district"):
                 data.district = geo.get("district")
-            if not data.pin_code:
+            if not data.pin_code and geo.get("pin_code"):
                 data.pin_code = geo.get("pin_code")
 
         # Create user

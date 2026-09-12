@@ -51,6 +51,7 @@ class AuthViewModel @Inject constructor(
     val longitudeState = MutableStateFlow<Double?>(null)
     val isDetectingLocation = MutableStateFlow(false)
     val locationDetectedMessage = MutableStateFlow<String?>(null)
+    val locationErrorMessage = MutableStateFlow<String?>(null)
 
     fun applyDetectedLocation(
         lat: Double,
@@ -66,12 +67,19 @@ class AuthViewModel @Inject constructor(
         if (!pinCode.isNullOrBlank()) {
             pinCodeState.value = pinCode
         }
+        locationErrorMessage.value = null
         locationDetectedMessage.value = "$district, $state ${pinCode ?: ""} (%.4f, %.4f)".format(lat, lng)
     }
 
-    fun reverseGeocodeAndSet(lat: Double, lng: Double) {
+    fun setLocationError(msg: String) {
+        locationErrorMessage.value = msg
+        isDetectingLocation.value = false
+    }
+
+    fun reverseGeocodeAndSet(lat: Double? = null, lng: Double? = null) {
         viewModelScope.launch {
             isDetectingLocation.value = true
+            locationErrorMessage.value = null
             when (val res = authRepository.reverseGeocode(lat, lng)) {
                 is AuthResult.Success -> {
                     val data = res.data
@@ -84,15 +92,20 @@ class AuthViewModel @Inject constructor(
                     )
                 }
                 is AuthResult.Error -> {
-                    latitudeState.value = lat
-                    longitudeState.value = lng
-                    locationDetectedMessage.value = "GPS: %.4f, %.4f".format(lat, lng)
+                    if (lat != null && lng != null) {
+                        latitudeState.value = lat
+                        longitudeState.value = lng
+                        locationDetectedMessage.value = "GPS: %.4f, %.4f".format(lat, lng)
+                    } else {
+                        locationErrorMessage.value = res.message ?: "Could not detect location. Please enter manually."
+                    }
                 }
                 else -> Unit
             }
             isDetectingLocation.value = false
         }
     }
+
 
     fun login() {
         val errorMsg = validateLoginForm()

@@ -111,7 +111,7 @@ class AuthRepository @Inject constructor(
         tokenManager.clearTokens()
     }
 
-    suspend fun reverseGeocode(latitude: Double, longitude: Double): AuthResult<ReverseGeocodeResponse> = withContext(Dispatchers.IO) {
+    suspend fun reverseGeocode(latitude: Double?, longitude: Double?): AuthResult<ReverseGeocodeResponse> = withContext(Dispatchers.IO) {
         try {
             val response = authApi.reverseGeocode(latitude, longitude)
             AuthResult.Success(response)

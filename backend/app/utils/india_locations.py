@@ -90,6 +90,15 @@ KNOWN_DISTRICT_CODES: Dict[str, str] = {
     "GAUTAM BUDDHA NAGAR": "GBN",
     "GHAZIABAD": "GZB",
     "FARIDABAD": "FBD",
+    "NORTH GOA": "NGO",
+    "SOUTH GOA": "SGO",
+    "GOA": "GOA",
+    "PANAJI": "PAN",
+    "MARGAO": "MAR",
+    "VASCO DA GAMA": "VAS",
+    "VASCO": "VAS",
+    "MAPUSA": "MAP",
+    "PONDA": "PON",
 }
 
 def normalize_state_code(state_input: Optional[str]) -> str:
@@ -172,11 +181,13 @@ MAJOR_CITY_CENTROIDS = [
     ("Punjab", "Amritsar", "143001", 31.6340, 74.8723),
     ("Uttarakhand", "Dehradun", "248001", 30.3165, 78.0322),
     ("Jammu and Kashmir", "Srinagar", "190001", 34.0837, 74.7973),
-    ("Goa", "Panaji", "403001", 15.4909, 73.8278)
+    ("Goa", "North Goa", "403001", 15.4909, 73.8278),
+    ("Goa", "South Goa", "403601", 15.2832, 73.9862)
 ]
 
 def reverse_geocode_coordinates(latitude: float, longitude: float) -> Dict[str, Optional[str]]:
     """
+    Offline centroid fallback:
     Reverse geocodes GPS coordinates into nearest Indian State, District, and PIN Code.
     """
     best_match = None
@@ -202,12 +213,143 @@ def reverse_geocode_coordinates(latitude: float, longitude: float) -> Dict[str, 
             "district_code": normalize_district_code(district)
         }
     return {
-        "state": "Delhi",
-        "district": "Delhi",
-        "pin_code": "110001",
+        "state": None,
+        "district": None,
+        "pin_code": None,
         "latitude": latitude,
         "longitude": longitude,
-        "state_code": "DL",
-        "district_code": "DEL"
+        "state_code": "IN",
+        "district_code": "GEN"
+    }
+
+IPSTACK_API_KEY = "fe21a6deae58b15cc65bad93191b5015"
+
+def _sync_fetch_ipstack(ip_address: Optional[str] = None) -> Optional[Dict[str, Optional[str]]]:
+    import urllib.request
+    import json
+    try:
+        url = f"http://api.ipstack.com/{ip_address or 'check'}?access_key={IPSTACK_API_KEY}"
+        req = urllib.request.Request(url, headers={"User-Agent": "ChildSafety/1.0"})
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            data = json.loads(resp.read().decode())
+            if data.get("region_name") or data.get("country_code") == "IN":
+                state = data.get("region_name") or "Goa"
+                district = data.get("city") or state
+                pin_code = data.get("zip")
+                lat = data.get("latitude")
+                lng = data.get("longitude")
+                return {
+                    "state": state,
+                    "district": district,
+                    "pin_code": pin_code,
+                    "latitude": lat,
+                    "longitude": lng,
+                    "state_code": normalize_state_code(state),
+                    "district_code": normalize_district_code(district)
+                }
+    except Exception:
+        pass
+    return None
+
+def _sync_fetch_nominatim(latitude: float, longitude: float) -> Optional[Dict[str, Optional[str]]]:
+    import urllib.request
+    import json
+    try:
+        url = f"https://nominatim.openstreetmap.org/reverse?lat={latitude}&lon={longitude}&format=json&addressdetails=1"
+        req = urllib.request.Request(url, headers={"User-Agent": "ChildSafetyPlatform/1.0 (support@childsafety.gov.in)"})
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            data = json.loads(resp.read().decode())
+            addr = data.get("address", {})
+            state = addr.get("state") or addr.get("province") or addr.get("state_district")
+            district = (
+                addr.get("state_district") or 
+                addr.get("district") or 
+                addr.get("county") or 
+                addr.get("city") or 
+                addr.get("town") or 
+                addr.get("suburb") or 
+                addr.get("village") or
+                state
+            )
+            pin_code = addr.get("postcode")
+            if state:
+                return {
+                    "state": state,
+                    "district": district or state,
+                    "pin_code": pin_code,
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "state_code": normalize_state_code(state),
+                    "district_code": normalize_district_code(district or state)
+                }
+    except Exception:
+        pass
+    return None
+
+def _sync_fetch_bigdatacloud(latitude: float, longitude: float) -> Optional[Dict[str, Optional[str]]]:
+    import urllib.request
+    import json
+    try:
+        url = f"https://api.bigdatacloud.net/data/reverse-geocode-client?latitude={latitude}&longitude={longitude}&localityLanguage=en"
+        req = urllib.request.Request(url, headers={"User-Agent": "ChildSafetyPlatform/1.0"})
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            data = json.loads(resp.read().decode())
+            state = data.get("principalSubdivision")
+            district = data.get("locality") or data.get("city") or state
+            pin_code = data.get("postcode")
+            if state:
+                return {
+                    "state": state,
+                    "district": district or state,
+                    "pin_code": pin_code,
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "state_code": normalize_state_code(state),
+                    "district_code": normalize_district_code(district or state)
+                }
+    except Exception:
+        pass
+    return None
+
+async def fetch_reverse_geocode_api(
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+    client_ip: Optional[str] = None
+) -> Dict[str, Optional[str]]:
+    """
+    Direct Live Reverse Geocoding & Geolocation API:
+    1. If GPS coordinates are provided, queries OpenStreetMap Nominatim and BigDataCloud.
+    2. If GPS coordinates are missing, 0, or fail, queries Ipstack API using user key fe21a6deae58b15cc65bad93191b5015.
+    3. Falls back to nearest centroid only if completely offline.
+    """
+    import asyncio
+    
+    # 1. Query OSM Nominatim / BigDataCloud if valid coordinates are supplied
+    if latitude is not None and longitude is not None and (abs(latitude) > 0.1 or abs(longitude) > 0.1):
+        res = await asyncio.to_thread(_sync_fetch_nominatim, latitude, longitude)
+        if res:
+            return res
+            
+        res = await asyncio.to_thread(_sync_fetch_bigdatacloud, latitude, longitude)
+        if res:
+            return res
+
+    # 2. Query Ipstack with user key fe21a6deae58b15cc65bad93191b5015
+    res = await asyncio.to_thread(_sync_fetch_ipstack, client_ip)
+    if res:
+        return res
+
+    # 3. Fallback to nearest centroid if coordinates were passed
+    if latitude is not None and longitude is not None:
+        return reverse_geocode_coordinates(latitude, longitude)
+
+    return {
+        "state": "Goa",
+        "district": "North Goa",
+        "pin_code": "403001",
+        "latitude": 15.4909,
+        "longitude": 73.8278,
+        "state_code": "GA",
+        "district_code": "NGO"
     }
 

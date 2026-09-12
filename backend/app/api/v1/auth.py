@@ -161,14 +161,20 @@ async def update_me(
 
 @router.get("/reverse-geocode")
 async def reverse_geocode_location(
-    latitude: float = Query(..., description="GPS latitude"),
-    longitude: float = Query(..., description="GPS longitude")
+    request: Request,
+    latitude: Optional[float] = Query(None, description="GPS latitude"),
+    longitude: Optional[float] = Query(None, description="GPS longitude")
 ):
     """
     Direct GPS Geolocation Lookup:
-    Reverse geocodes device GPS coordinates into Indian State, District, and PIN Code,
-    enabling 1-tap location setup without manual user input.
+    Reverse geocodes device GPS coordinates via live reverse geocoding API,
+    or geolocates via Ipstack API (key: fe21a6deae58b15cc65bad93191b5015).
     """
-    from app.utils.india_locations import reverse_geocode_coordinates
-    return reverse_geocode_coordinates(latitude, longitude)
+    from app.utils.india_locations import fetch_reverse_geocode_api
+    client_ip = request.headers.get("x-forwarded-for", "").split(",")[0].strip() or request.client.host if request.client else None
+    if client_ip in ("127.0.0.1", "localhost", "::1"):
+        client_ip = None
+    return await fetch_reverse_geocode_api(latitude, longitude, client_ip)
+
+
 

@@ -31,6 +31,10 @@ import com.childsafety.app.ui.navigation.Routes
 import com.childsafety.app.ui.theme.ChildSafetyTheme
 import com.childsafety.app.worker.OfflineSyncWorker
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
+import android.location.LocationManager
+import android.content.Context
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -145,24 +149,47 @@ class MainActivity : ComponentActivity() {
             if (hasFine || hasCoarse) {
                 val fusedClient = LocationServices.getFusedLocationProviderClient(this)
                 val location = suspendCancellableCoroutine<Location?> { cont ->
-                    fusedClient.lastLocation
-                        .addOnSuccessListener { loc ->
-                            if (cont.isActive) cont.resume(loc)
+                    val cts = CancellationTokenSource()
+                    fusedClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cts.token)
+                        .addOnSuccessListener { liveLoc ->
+                            if (liveLoc != null) {
+                                if (cont.isActive) cont.resume(liveLoc)
+                            } else {
+                                fusedClient.lastLocation
+                                    .addOnSuccessListener { lastLoc ->
+                                        if (cont.isActive) cont.resume(lastLoc)
+                                    }
+                                    .addOnFailureListener {
+                                        if (cont.isActive) cont.resume(null)
+                                    }
+                            }
                         }
                         .addOnFailureListener {
-                            if (cont.isActive) cont.resume(null)
+                            fusedClient.lastLocation
+                                .addOnSuccessListener { lastLoc ->
+                                    if (cont.isActive) cont.resume(lastLoc)
+                                }
+                                .addOnFailureListener {
+                                    if (cont.isActive) cont.resume(null)
+                                }
                         }
+                } ?: run {
+                    val lm = getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+                    try {
+                        lm?.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                            ?: lm?.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                    } catch (_: SecurityException) { null }
                 }
                 if (location != null) {
                     Pair(location.latitude, location.longitude)
                 } else {
-                    Pair(28.6139, 77.2090)
+                    Pair(15.4909, 73.8278)
                 }
             } else {
-                Pair(28.6139, 77.2090)
+                Pair(15.4909, 73.8278)
             }
         } catch (e: Exception) {
-            Pair(28.6139, 77.2090)
+            Pair(15.4909, 73.8278)
         }
     }
 }

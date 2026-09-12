@@ -24,7 +24,7 @@ interface AuthApi {
 
     @GET("api/v1/auth/reverse-geocode")
     suspend fun reverseGeocode(
-        @Query("latitude") latitude: Double,
-        @Query("longitude") longitude: Double
+        @Query("latitude") latitude: Double? = null,
+        @Query("longitude") longitude: Double? = null
     ): ReverseGeocodeResponse
 }

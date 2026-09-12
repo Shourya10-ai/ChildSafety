@@ -21,13 +21,18 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.location.Location
+import android.location.LocationManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import java.util.Locale
 import androidx.hilt.navigation.compose.hiltViewModel
 
@@ -56,44 +61,76 @@ fun RegisterScreen(
     val parentEmailVal by viewModel.parentEmailState.collectAsState()
     val schoolNameVal by viewModel.schoolNameState.collectAsState()
     val locationDetectedMsg by viewModel.locationDetectedMessage.collectAsState()
+    val locationErrorMsg by viewModel.locationErrorMessage.collectAsState()
     val isDetectingLocation by viewModel.isDetectingLocation.collectAsState()
     val context = LocalContext.current
+
+    fun processLocation(loc: Location) {
+        try {
+            val geocoder = Geocoder(context, Locale.getDefault())
+            @Suppress("DEPRECATION")
+            val addresses = geocoder.getFromLocation(loc.latitude, loc.longitude, 1)
+            if (!addresses.isNullOrEmpty()) {
+                val addr = addresses[0]
+                val state = addr.adminArea
+                val district = addr.subAdminArea ?: addr.locality ?: addr.subLocality
+                val pinCode = addr.postalCode
+                if (!state.isNullOrBlank() && !district.isNullOrBlank()) {
+                    viewModel.applyDetectedLocation(
+                        lat = loc.latitude,
+                        lng = loc.longitude,
+                        state = state,
+                        district = district,
+                        pinCode = pinCode
+                    )
+                    viewModel.isDetectingLocation.value = false
+                    return
+                }
+            }
+        } catch (_: Exception) {}
+        // If native Geocoder fails or returns incomplete info, query backend live reverse geocoding API
+        viewModel.reverseGeocodeAndSet(loc.latitude, loc.longitude)
+    }
 
     fun fetchDeviceLocationAndFill() {
         viewModel.isDetectingLocation.value = true
         val fusedClient = LocationServices.getFusedLocationProviderClient(context)
         try {
-            fusedClient.lastLocation.addOnSuccessListener { loc ->
-                if (loc != null) {
-                    try {
-                        val geocoder = Geocoder(context, Locale.getDefault())
-                        @Suppress("DEPRECATION")
-                        val addresses = geocoder.getFromLocation(loc.latitude, loc.longitude, 1)
-                        if (!addresses.isNullOrEmpty()) {
-                            val addr = addresses[0]
-                            val state = addr.adminArea ?: "Delhi"
-                            val district = addr.subAdminArea ?: addr.locality ?: "Delhi"
-                            val pinCode = addr.postalCode ?: "110001"
-                            viewModel.applyDetectedLocation(
-                                lat = loc.latitude,
-                                lng = loc.longitude,
-                                state = state,
-                                district = district,
-                                pinCode = pinCode
-                            )
-                            viewModel.isDetectingLocation.value = false
-                            return@addOnSuccessListener
+            val cancellationTokenSource = CancellationTokenSource()
+            fusedClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellationTokenSource.token)
+                .addOnSuccessListener { liveLoc ->
+                    if (liveLoc != null) {
+                        processLocation(liveLoc)
+                    } else {
+                        fusedClient.lastLocation.addOnSuccessListener { lastLoc ->
+                            if (lastLoc != null) {
+                                processLocation(lastLoc)
+                            } else {
+                                val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+                                val netLoc = try {
+                                    lm?.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                                        ?: lm?.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                                } catch (_: SecurityException) { null }
+
+                                if (netLoc != null) {
+                                    processLocation(netLoc)
+                                } else {
+                                    // Query Ipstack via backend (pass null coords so it uses client IP)
+                                    viewModel.reverseGeocodeAndSet(null, null)
+                                }
+                            }
+                        }.addOnFailureListener {
+                            viewModel.reverseGeocodeAndSet(null, null)
                         }
-                    } catch (_: Exception) {}
-                    viewModel.reverseGeocodeAndSet(loc.latitude, loc.longitude)
-                } else {
-                    viewModel.reverseGeocodeAndSet(28.6139, 77.2090)
+                    }
                 }
-            }.addOnFailureListener {
-                viewModel.reverseGeocodeAndSet(28.6139, 77.2090)
-            }
+                .addOnFailureListener {
+                    viewModel.reverseGeocodeAndSet(null, null)
+                }
+        } catch (_: SecurityException) {
+            viewModel.reverseGeocodeAndSet(null, null)
         } catch (_: Exception) {
-            viewModel.reverseGeocodeAndSet(28.6139, 77.2090)
+            viewModel.reverseGeocodeAndSet(null, null)
         }
     }
 
@@ -105,7 +142,8 @@ fun RegisterScreen(
         if (granted) {
             fetchDeviceLocationAndFill()
         } else {
-            viewModel.reverseGeocodeAndSet(28.6139, 77.2090)
+            // Permission denied: geolocate via IP geolocation on backend
+            viewModel.reverseGeocodeAndSet(null, null)
         }
     }
 
@@ -392,6 +430,36 @@ fun RegisterScreen(
                                 text = "Auto-Detected: $locationDetectedMsg",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                if (!locationErrorMsg.isNullOrEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f)
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Filled.Warning,
+                                contentDescription = "Location Error",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = locationErrorMsg!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
                                 fontWeight = FontWeight.Medium
                             )
                         }
