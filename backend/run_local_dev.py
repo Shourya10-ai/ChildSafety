@@ -24,6 +24,7 @@ from app.models.moderator import Moderator, Assignment
 from app.models.identity_vault import IdentityVault
 from app.models.case import Case, Incident, Report, ModeratorNote
 from app.models.evidence import Evidence
+from app.models.sos import SOSEvent
 from app.models.notification import Notification, ChatMessage
 from app.models.escalation import Escalation
 from app.models.audit import AuditLog
@@ -94,6 +95,7 @@ async def dev_lifespan(app: FastAPI):
         Report.__table__,
         ModeratorNote.__table__,
         Evidence.__table__,
+        SOSEvent.__table__,
         Notification.__table__,
         ChatMessage.__table__,
         Escalation.__table__,

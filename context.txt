@@ -3,7 +3,7 @@
 ================================================================================
 
 Last Updated: 2026-09-12
-Current Phase: Phase 5 COMPLETE (Phase 6 next)
+Current Phase: Phase 6 COMPLETE (Phase 7 next)
 
 This file contains the complete context for the AI-Powered Child Safety &
 Protection Platform. Give this file to any AI model and it should understand
@@ -683,6 +683,53 @@ SECTION 14: PROGRESS LOG
                * AdultAlertsScreen.kt: Renders live incidents from backend combined with priority alerts.
 
              Next: Phase 6 — SOS & Emergency System
+
+[2026-09-12] PHASE 6 COMPLETE — SOS & Emergency System
+             Backend:
+             - Models & Database:
+               * SafePointGeometry TypeDecorator in models/sos.py: PostGIS Geometry('POINT', 4326) on PostgreSQL with SQLite Text fallback for local zero-dependency dev.
+               * Explicit latitude, longitude, and accuracy float columns for reliable cross-engine serialization and mathematical Haversine proximity calculations.
+               * Added default=uuid.uuid4 to SOSEvent, Notification, ChatMessage models for UUID primary keys across all platforms.
+             - Schemas & Validation:
+               * SOSTriggerRequest (child_id, latitude, longitude, accuracy, location_address, message).
+               * SOSResolveRequest (message/resolution note).
+               * SOSEventOut (full SOS event payload with protected_child_id, protected_case_id, notified_guardians_count).
+               * NotificationOut & NotificationList (user notifications feed).
+             - Services & Proximity Engine:
+               * sos_service:
+                 - Haversine distance calculation (haversine_distance_km).
+                 - SOS trigger workflow: automatically provisions a critical Case (CASE-XXXXXXXX), a critical Incident (EMERGENCY_SOS), dispatches emergency notifications to all linked adult guardians and assigned moderator, logs SOS event beacon.
+                 - Proximity queries: get_nearby_sos_events filters active SOS alerts within given radius (km).
+                 - Resolution workflow: resolve_sos updates event status to RESOLVED, marks linked critical case resolved with timestamps.
+               * notification_service: get_user_notifications, mark_notification_read.
+             - API Endpoints (FastAPI):
+               * /api/v1/sos/trigger (POST): Instant SOS beacon activation.
+               * /api/v1/sos/{id}/resolve (PUT): Resolution by child or adult guardian.
+               * /api/v1/sos/active (GET): List of all currently unresolved SOS events.
+               * /api/v1/sos/nearby (GET): Geo-radius search for nearby active SOS incidents.
+               * /api/v1/notifications/ (GET): Notification feed for authenticated users.
+               * /api/v1/notifications/{id}/read (PUT): Mark notification as read.
+             - Dev Server & Tests:
+               * run_local_dev.py: Added SOSEvent table creation.
+               * backend/tests/test_sos_emergency.py: Automated test suite passing 100%.
+               * Live dev server verified on 0.0.0.0:8000.
+
+             Android:
+             - Google Maps & Permissions:
+               * Configured com.google.android.geo.API_KEY with user Maps key in AndroidManifest.xml.
+               * Configured ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, FOREGROUND_SERVICE_LOCATION permissions.
+             - Network & Models:
+               * SosModels.kt: TriggerSosRequest, ResolveSosRequest, SosEventResponse, NotificationItem, NotificationListResponse.
+               * SosApi.kt: Retrofit endpoints for triggerSos, resolveSos, getActiveSos, getMyNotifications.
+               * NetworkModule.kt: Provided SosApi singleton in Hilt DI container.
+             - UI & State:
+               * SosViewModel.kt: 3-second abortable countdown timer, GPS location acquisition via FusedLocationProviderClient (with fallback), SOS trigger network dispatch, active emergency state tracking, and resolution workflow.
+               * ChildHomeScreen.kt: Interactive SOS button with 3-second countdown and abort tap; when active, turns into pulsing red emergency banner showing notified guardians count and protected case ID; "I Am Safe Now" resolution button; direct emergency dial shortcuts (Police 112, Childline 1098).
+               * AdultAlertsViewModel.kt: Injected SosApi, aggregates live active SOS events and active incidents, parent resolution method.
+               * AdultHomeScreen.kt: High-priority active emergency SOS card with child name, live coordinates, Google Maps intent (geo:lat,lng), Call Police 112, Call Childline 1098, and Resolve buttons.
+               * AdultAlertsScreen.kt: Critical alert cards enhanced with one-touch Call 112 and Helpline 1098 quick action buttons.
+
+             Next: Phase 7 — AI Safety Pipeline: Cyberbullying, Grooming & Content Moderation
 
 ================================================================================
 END OF CONTEXT

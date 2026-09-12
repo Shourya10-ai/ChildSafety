@@ -9,6 +9,8 @@ from app.api.v1.cases import router as cases_router
 from app.api.v1.incidents import router as incidents_router
 from app.api.v1.reports import router as reports_router
 from app.api.v1.evidence import router as evidence_router
+from app.api.v1.sos import router as sos_router
+from app.api.v1.notifications import router as notifications_router
 
 router = APIRouter()
 
@@ -21,3 +23,5 @@ router.include_router(cases_router, prefix="/cases", tags=["Cases"])
 router.include_router(incidents_router, prefix="/incidents", tags=["Incidents"])
 router.include_router(reports_router, prefix="/reports", tags=["Reports"])
 router.include_router(evidence_router, prefix="/evidence", tags=["Evidence"])
+router.include_router(sos_router, prefix="/sos", tags=["SOS"])
+router.include_router(notifications_router, prefix="/notifications", tags=["Notifications"])
