@@ -2,9 +2,14 @@ package com.childsafety.app.ui.adult
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.childsafety.app.network.AdultApi
+import com.childsafety.app.network.IntelligenceApi
 import com.childsafety.app.network.ReportApi
 import com.childsafety.app.network.SosApi
+import com.childsafety.app.network.models.ChildResponse
+import com.childsafety.app.network.models.GraphStatsResponse
 import com.childsafety.app.network.models.ResolveSosRequest
+import com.childsafety.app.network.models.RiskEvaluationResponse
 import com.childsafety.app.network.models.SosEventResponse
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +20,9 @@ import javax.inject.Inject
 @HiltViewModel
 class AdultAlertsViewModel @Inject constructor(
     private val reportApi: ReportApi,
-    private val sosApi: SosApi
+    private val sosApi: SosApi,
+    private val adultApi: AdultApi,
+    private val intelligenceApi: IntelligenceApi
 ) : ViewModel() {
 
     private val _alerts = MutableStateFlow<List<Alert>>(emptyList())
@@ -23,6 +30,15 @@ class AdultAlertsViewModel @Inject constructor(
 
     private val _activeSosList = MutableStateFlow<List<SosEventResponse>>(emptyList())
     val activeSosList: StateFlow<List<SosEventResponse>> = _activeSosList
+
+    private val _linkedChildren = MutableStateFlow<List<ChildResponse>>(emptyList())
+    val linkedChildren: StateFlow<List<ChildResponse>> = _linkedChildren
+
+    private val _primaryChildRisk = MutableStateFlow<RiskEvaluationResponse?>(null)
+    val primaryChildRisk: StateFlow<RiskEvaluationResponse?> = _primaryChildRisk
+
+    private val _graphStats = MutableStateFlow<GraphStatsResponse?>(null)
+    val graphStats: StateFlow<GraphStatsResponse?> = _graphStats
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -77,6 +93,27 @@ class AdultAlertsViewModel @Inject constructor(
                     )
                 )
             }
+
+            // 4. Fetch Linked Children & Predictive Risk Assessment
+            try {
+                val children = adultApi.getLinkedChildren()
+                _linkedChildren.value = children
+                if (children.isNotEmpty()) {
+                    val primary = children.first()
+                    val riskRes = intelligenceApi.evaluateChildRisk(primary.id)
+                    if (riskRes.isSuccessful && riskRes.body() != null) {
+                        _primaryChildRisk.value = riskRes.body()
+                    }
+                }
+            } catch (_: Exception) {}
+
+            // 5. Fetch Global Safety Knowledge Graph Statistics
+            try {
+                val statsRes = intelligenceApi.getGraphStats()
+                if (statsRes.isSuccessful && statsRes.body() != null) {
+                    _graphStats.value = statsRes.body()
+                }
+            } catch (_: Exception) {}
 
             _alerts.value = combinedAlerts
             _isLoading.value = false

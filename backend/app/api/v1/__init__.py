@@ -16,6 +16,8 @@ from app.api.v1.chat import router as chat_router
 from app.api.v1.missing_children import router as missing_children_router
 from app.api.v1.intelligence import router as intelligence_router
 from app.api.v1.dpdp import router as dpdp_router
+from app.api.v1.graph import router as graph_router
+from app.api.v1.risk import router as risk_router
 from app.api.v1.ws import router as ws_router
 
 router = APIRouter()
@@ -36,4 +38,7 @@ router.include_router(chat_router)
 router.include_router(missing_children_router)
 router.include_router(intelligence_router)
 router.include_router(dpdp_router)
+router.include_router(graph_router)
+router.include_router(risk_router)
 router.include_router(ws_router, tags=["WebSocket Gateway"])
+

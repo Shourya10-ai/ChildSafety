@@ -9,6 +9,7 @@ import com.childsafety.app.network.ReportApi
 import com.childsafety.app.network.SosApi
 import com.childsafety.app.network.ChatApi
 import com.childsafety.app.network.MissingChildApi
+import com.childsafety.app.network.IntelligenceApi
 import com.childsafety.app.security.TokenManager
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -103,5 +104,11 @@ object NetworkModule {
     @Singleton
     fun provideMissingChildApi(retrofit: Retrofit): MissingChildApi {
         return retrofit.create(MissingChildApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideIntelligenceApi(retrofit: Retrofit): IntelligenceApi {
+        return retrofit.create(IntelligenceApi::class.java)
     }
 }

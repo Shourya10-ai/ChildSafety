@@ -35,6 +35,9 @@ fun AdultHomeScreen(
 ) {
     val context = LocalContext.current
     val activeSosList by viewModel.activeSosList.collectAsState()
+    val linkedChildren by viewModel.linkedChildren.collectAsState()
+    val primaryChildRisk by viewModel.primaryChildRisk.collectAsState()
+    val graphStats by viewModel.graphStats.collectAsState()
 
     Column(
         modifier = Modifier
@@ -164,15 +167,125 @@ fun AdultHomeScreen(
         // Family Safety Status Header
         Text("Family Safety Overview", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
 
-        // Linked Children List
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Leo (Protected ID: C8A3K2PQ)", fontWeight = FontWeight.Bold)
-                Text(
-                    text = if (activeSosList.isNotEmpty()) "Status: 🚨 EMERGENCY ACTIVE" else "Status: Active • Safe",
-                    color = if (activeSosList.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
-                )
+        // Linked Children List & Predictive Risk
+        if (linkedChildren.isNotEmpty()) {
+            linkedChildren.forEach { child ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "${child.displayName} (${child.protectedChildId})",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            primaryChildRisk?.let { risk ->
+                                val tierColor = when (risk.threatTier) {
+                                    "CRITICAL" -> Color(0xFFD32F2F)
+                                    "HIGH" -> Color(0xFFE65100)
+                                    "MEDIUM" -> Color(0xFFF57C00)
+                                    else -> Color(0xFF2E7D32)
+                                }
+                                Surface(
+                                    color = tierColor.copy(alpha = 0.15f),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        text = "${risk.threatTier} RISK",
+                                        color = tierColor,
+                                        fontWeight = FontWeight.Black,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = if (activeSosList.isNotEmpty()) "Status: 🚨 EMERGENCY ACTIVE" else "Status: Active • Shield Monitoring",
+                            color = if (activeSosList.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+
+                        primaryChildRisk?.let { risk ->
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                progress = { risk.compositeRiskScore.toFloat() },
+                                modifier = Modifier.fillMaxWidth().height(6.dp),
+                                color = when (risk.threatTier) {
+                                    "CRITICAL", "HIGH" -> MaterialTheme.colorScheme.error
+                                    "MEDIUM" -> Color(0xFFF57C00)
+                                    else -> Color(0xFF2E7D32)
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(
+                                    text = "AI Threat Index: ${(risk.compositeRiskScore * 100).toInt()}%",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Velocity: ${(risk.factors.velocityScore * 100).toInt()}% | Persistence: ${(risk.factors.predatorPersistenceScore * 100).toInt()}%",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            if (risk.statutoryCitations.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    risk.statutoryCitations.take(2).forEach { cit ->
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                text = "${cit.act} ${cit.section}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("No Linked Children Yet", fontWeight = FontWeight.Bold)
+                    Text("Link a child using their secret protected ID to enable real-time predictive risk monitoring.", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+
+        // Global Knowledge Graph Stats Card
+        graphStats?.let { stats ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Share, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Safety Intelligence Graph: ${stats.totalNodes} Nodes",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Text(
+                            text = "Tracking ${stats.casesCount} cases, ${stats.suspectsCount} suspect handles & ${stats.multiVictimPredatorsCount} multi-victim serial predators across districts.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
 

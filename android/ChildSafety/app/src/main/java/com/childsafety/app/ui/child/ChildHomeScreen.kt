@@ -48,6 +48,8 @@ fun ChildHomeScreen(
     val activeSos by viewModel.activeSos.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val statusMsg by viewModel.statusMessage.collectAsState()
+    val childProfile by viewModel.childProfile.collectAsState()
+    val riskEvaluation by viewModel.riskEvaluation.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -102,7 +104,7 @@ fun ChildHomeScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Your Secret Child ID", style = MaterialTheme.typography.labelLarge)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val displayId = activeSos?.protectedChildId ?: "C8A3K2PQ"
+                    val displayId = activeSos?.protectedChildId ?: childProfile?.protectedChildId ?: "C8A3K2PQ"
                     Text(
                         text = displayId,
                         style = MaterialTheme.typography.headlineMedium,
@@ -118,7 +120,62 @@ fun ChildHomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        // Real-Time Safety Shield Card
+        riskEvaluation?.let { risk ->
+            Spacer(modifier = Modifier.height(12.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = when (risk.threatTier) {
+                        "CRITICAL" -> MaterialTheme.colorScheme.errorContainer
+                        "HIGH" -> Color(0xFFFFE0B2)
+                        "MEDIUM" -> Color(0xFFFFF9C4)
+                        else -> MaterialTheme.colorScheme.secondaryContainer
+                    }
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = when (risk.threatTier) {
+                            "CRITICAL", "HIGH" -> Icons.Filled.Warning
+                            "MEDIUM" -> Icons.Filled.Info
+                            else -> Icons.Filled.CheckCircle
+                        },
+                        contentDescription = null,
+                        tint = when (risk.threatTier) {
+                            "CRITICAL" -> MaterialTheme.colorScheme.error
+                            "HIGH" -> Color(0xFFE65100)
+                            "MEDIUM" -> Color(0xFFF57C00)
+                            else -> Color(0xFF2E7D32)
+                        },
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Safety Shield: ${risk.threatTier} Threat Level",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        val advice = when (risk.threatTier) {
+                            "CRITICAL" -> "🚨 Urgent safety alert. Stealth protection active. Responders on standby."
+                            "HIGH" -> "⚠️ Heightened alert. Avoid contact with unknown accounts."
+                            "MEDIUM" -> "ℹ️ Caution advised. Never share private pictures, addresses, or phone numbers."
+                            else -> "✅ Safe & Clear. Your profile is continuously protected by our AI Guardian shield."
+                        }
+                        Text(
+                            text = advice,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Active Emergency Card (Visible when SOS is triggered)
         AnimatedVisibility(visible = isEmergency) {

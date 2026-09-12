@@ -9,3 +9,4 @@ from app.models.escalation import Escalation
 from app.models.audit import AuditLog
 from app.models.missing_child import MissingChild, CCTVCandidate
 from app.models.identity_vault import IdentityVault
+from app.models.knowledge_graph import SuspectEntity, IncidentSuspectLink

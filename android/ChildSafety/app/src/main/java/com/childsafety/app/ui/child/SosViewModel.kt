@@ -17,6 +17,10 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.childsafety.app.network.ChildApi
+import com.childsafety.app.network.IntelligenceApi
+import com.childsafety.app.network.models.ChildResponse
+import com.childsafety.app.network.models.RiskEvaluationResponse
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +37,8 @@ import kotlin.coroutines.resume
 class SosViewModel @Inject constructor(
     application: Application,
     private val sosApi: SosApi,
+    private val childApi: ChildApi,
+    private val intelligenceApi: IntelligenceApi,
     private val offlineQueueDao: OfflineQueueDao
 ) : AndroidViewModel(application) {
 
@@ -45,6 +51,12 @@ class SosViewModel @Inject constructor(
     private val _activeSos = MutableStateFlow<SosEventResponse?>(null)
     val activeSos: StateFlow<SosEventResponse?> = _activeSos
 
+    private val _childProfile = MutableStateFlow<ChildResponse?>(null)
+    val childProfile: StateFlow<ChildResponse?> = _childProfile
+
+    private val _riskEvaluation = MutableStateFlow<RiskEvaluationResponse?>(null)
+    val riskEvaluation: StateFlow<RiskEvaluationResponse?> = _riskEvaluation
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
@@ -55,6 +67,20 @@ class SosViewModel @Inject constructor(
 
     init {
         checkActiveSos()
+        loadChildRisk()
+    }
+
+    fun loadChildRisk() {
+        viewModelScope.launch {
+            try {
+                val profile = childApi.getMyChildProfile()
+                _childProfile.value = profile
+                val riskRes = intelligenceApi.evaluateChildRisk(profile.id)
+                if (riskRes.isSuccessful && riskRes.body() != null) {
+                    _riskEvaluation.value = riskRes.body()
+                }
+            } catch (_: Exception) {}
+        }
     }
 
     fun startSosCountdown() {
