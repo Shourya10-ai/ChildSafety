@@ -12,13 +12,14 @@ class AuthInterceptor @Inject constructor(
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val token = tokenManager.getAccessToken()
-        val request = if (token != null) {
-            chain.request().newBuilder()
-                .addHeader("Authorization", "Bearer $token")
-                .build()
-        } else {
-            chain.request()
+        val builder = chain.request().newBuilder()
+            // Required for ngrok public tunnel — prevents HTML interstitial page
+            .addHeader("ngrok-skip-browser-warning", "1")
+
+        if (token != null) {
+            builder.addHeader("Authorization", "Bearer $token")
         }
-        return chain.proceed(request)
+
+        return chain.proceed(builder.build())
     }
 }

@@ -55,7 +55,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(client: OkHttpClient, moshi: Moshi): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://10.147.167.171:8000/")
+            .baseUrl("https://squishier-clunky-neuter.ngrok-free.dev/")
             .client(client)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
