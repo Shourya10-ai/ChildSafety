@@ -115,12 +115,14 @@ All routes are prefixed with: /api/v1/
 ──────────────────────────────────────────────────────────────────────────────
 5.1  AUTHENTICATION   /api/v1/auth/
 ──────────────────────────────────────────────────────────────────────────────
-  POST   /auth/register           Register new user
+  POST   /auth/register           Register new user (accepts optional latitude, longitude for auto-geocoding)
   POST   /auth/login              Login → returns access + refresh tokens
   POST   /auth/refresh            Refresh access token
   POST   /auth/logout             Invalidate tokens
   GET    /auth/me                 Get logged-in user profile
   PUT    /auth/me                 Update logged-in user profile
+  GET    /auth/reverse-geocode    Reverse-geocode GPS coords (?latitude=X&longitude=Y) → State, District, PIN
+
 
 ──────────────────────────────────────────────────────────────────────────────
 5.2  CASES   /api/v1/cases/
