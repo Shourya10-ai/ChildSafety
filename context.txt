@@ -773,7 +773,55 @@ SECTION 14: PROGRESS LOG
              Automated Verification:
              - backend/tests/test_architecture_guardrails.py passing 100%.
 
-             Next: Phase 7 — AI Safety Pipeline: Cyberbullying, Grooming & Content Moderation
+              Next: Phase 7 — AI Safety Pipeline: Cyberbullying, Grooming & Content Moderation
+
+================================================================================
+SECTION 15: ADVANCED SPECIALIZED SAFETY CAPABILITIES (APPROVED ARCHITECTURE)
+================================================================================
+
+1. SILENT / DURESS SOS (Emergency Protection in Coercive Households):
+   - Trigger Mechanisms:
+     * 3 rapid presses on Volume Down (KEYCODE_VOLUME_DOWN) within 2 seconds.
+     * Stealth gesture: 4 consecutive taps on the top shield banner.
+     * Safe code phrase in chat (e.g., "Can you find my math notes?").
+   - Execution: Fires POST /api/v1/sos/trigger with is_silent=True, duress=True.
+   - Case priority: CRITICAL_SILENT.
+   - Suppression: Completely suppresses sirens, flashing red screens, and local push notifications on the child's device to prevent retaliatory violence.
+   - Dispatched strictly to duty moderators, police (112), Childline (1098), and nominated non-household trusted adults.
+
+2. APP DISGUISE / STEALTH MODE & QUICK EXIT (Anti-Detection / Shared Devices):
+   - Dynamic Launcher Icon: Uses Android <activity-alias> and PackageManager to disguise the app as "Simple Calculator" or "Daily Notes".
+   - Decoy Interface: Disguised app opens into a functioning calculator; entering secret PIN (e.g. 1423=) unlocks Child Mode.
+   - 100ms Quick Exit: Persistent corner swipe or quick-tap panic button immediately invokes activity.finishAffinity() to background app or return to decoy screen.
+
+3. TRUSTED-ADULT NOMINATION (Bypassing Abusive Household Guardians):
+   - Add is_alternate_trusted_adult and nomination_status to AdultChildLink.
+   - A child can nominate an alternate safe adult (teacher, aunt, elder sibling, NGO worker).
+   - Assigned persistent moderator vets and approves nominee before alert routing.
+   - When domestic duress is detected, alerts bypass the primary household account and route exclusively to the nominated adult and emergency responders.
+
+4. TIERED AGE & ROLE ASSURANCE:
+   - Tier 1: School UDISE+ institutional code verification.
+   - Tier 2: 2-minute introductory chat check-in with assigned persistent moderator.
+   - Tier 3 (Adults): Optional DigiLocker / Aadhaar XML age verification (checking age >= 18 without persisting raw Aadhaar number under UIDAI & DPDP rules).
+
+5. MODERATOR VETTING, WORKLOAD CAPS & SLA AUTO-ESCALATION:
+   - Vetting: Background checks, police verification record, and POCSO certification.
+   - Workload Enforcer: Strict cap of max 15 active cases per moderator; auto-routing skips moderators at capacity.
+   - SLA Escalation: 15-minute SLA for Emergency SOS, 2-hour SLA for High Grooming/Threat flags. Unacknowledged cases auto-reassign to the Duty Supervisor.
+
+6. DPDP ACT 2023 DATA RETENTION & AGE-OF-MAJORITY (18+) RIGHTS:
+   - Dual-Track Retention: Operational logs expunged after 90 days of case closure; forensic evidence retained for 7 years under Section 63 BSA 2023 / POCSO Act.
+   - Age 18 Transition: On the child's 18th birthday, parental consent automatically lapses; all guardian access to historical records is severed; the now-adult user takes sole custody of account with full DPDP rights (access, correction, erasure).
+
+7. CONCEPT-DRIFT MONITORING FOR SAFETY CLASSIFIERS:
+   - Tracks out-of-vocabulary (OOV) slang frequency and embedding drift (Wasserstein distance / Population Stability Index) against training baseline.
+   - Active Learning Queue: Moderator false-positive dismissals and manually tagged grooming slang automatically feed into Label Studio for continuous model calibration.
+
+PHASE IMPLEMENTATION SCHEDULE:
+- Phase 7 (Current): AI Safety Pipeline + Trusted-Adult Nomination + SLA Auto-Escalation + Concept-Drift Monitor
+- Phase 8: Vision, Speech & Stealth Safety (Silent/Duress SOS + App Disguise & Quick Exit + Multimodal OCR/Speech)
+- Phase 9: Longitudinal Intelligence, Age Assurance & DPDP 18+ Rights
 
 ================================================================================
 END OF CONTEXT
