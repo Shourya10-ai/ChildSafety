@@ -49,7 +49,7 @@ class OfflineSyncWorker(
                 val req = CreateReportRequest(
                     childId = report.childId,
                     category = report.category,
-                    details = report.details,
+                    content = report.details,
                     platform = report.platform,
                     isAnonymous = report.isAnonymous
                 )
