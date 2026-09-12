@@ -1,8 +1,10 @@
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.dependencies import get_db, get_current_active_user, require_roles
+import redis.asyncio as redis
+from app.core.dependencies import get_db, get_redis, get_current_active_user, require_roles
+from app.core.rate_limiter import check_sos_rate_limit
 from app.api.v1.reports import get_optional_current_user
 from app.models.user import User
 from app.schemas.sos import SOSTriggerRequest, SOSResolveRequest, SOSEventOut
@@ -13,14 +15,18 @@ router = APIRouter()
 @router.post("/trigger", response_model=SOSEventOut, status_code=status.HTTP_201_CREATED)
 async def trigger_emergency_sos(
     data: SOSTriggerRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
+    redis_client: redis.Redis = Depends(get_redis),
     optional_user: Optional[User] = Depends(get_optional_current_user)
 ):
     """
     Triggers an emergency SOS event.
+    Protected by rate limiting to mitigate script flooding while allowing panic retries.
     Captures GPS coordinates, creates/attaches to a critical case,
     and executes the emergency notification chain to all linked guardians and assigned moderator.
     """
+    await check_sos_rate_limit(request=request, redis_client=redis_client)
     user_id = optional_user.id if optional_user else None
     return await sos_service.trigger_sos(db, data, user_id=user_id)
 

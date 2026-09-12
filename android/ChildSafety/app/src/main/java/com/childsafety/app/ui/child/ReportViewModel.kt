@@ -1,9 +1,13 @@
 package com.childsafety.app.ui.child
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.childsafety.app.data.local.db.OfflineQueueDao
+import com.childsafety.app.data.local.db.QueuedReportEntity
 import com.childsafety.app.network.ReportApi
 import com.childsafety.app.network.models.CreateReportRequest
+import com.childsafety.app.worker.OfflineSyncWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,8 +24,10 @@ data class ReportUiState(
 
 @HiltViewModel
 class ReportViewModel @Inject constructor(
-    private val reportApi: ReportApi
-) : ViewModel() {
+    application: Application,
+    private val reportApi: ReportApi,
+    private val offlineQueueDao: OfflineQueueDao
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(ReportUiState())
     val uiState: StateFlow<ReportUiState> = _uiState
@@ -39,13 +45,14 @@ class ReportViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.value = ReportUiState(isLoading = true)
+            val request = CreateReportRequest(
+                content = content,
+                category = category.ifBlank { "other" },
+                platform = platform.ifBlank { null },
+                isAnonymous = isAnonymous
+            )
+
             try {
-                val request = CreateReportRequest(
-                    content = content,
-                    category = category.ifBlank { "other" },
-                    platform = platform.ifBlank { null },
-                    isAnonymous = isAnonymous
-                )
                 val response = reportApi.submitReport(request)
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
@@ -54,17 +61,32 @@ class ReportViewModel @Inject constructor(
                         protectedCaseId = body.protectedCaseId,
                         message = body.message
                     )
-                } else {
-                    _uiState.value = ReportUiState(
-                        error = "Server responded with code ${response.code()}"
-                    )
+                    return@launch
                 }
-            } catch (e: Exception) {
-                // Graceful fallback for offline testing
+            } catch (_: Exception) {
+                // Network unreachable or server down
+            }
+
+            // Offline fallback: store in Room and schedule WorkManager
+            try {
+                offlineQueueDao.insertQueuedReport(
+                    QueuedReportEntity(
+                        childId = null,
+                        category = category.ifBlank { "other" },
+                        details = content,
+                        platform = platform.ifBlank { null },
+                        isAnonymous = isAnonymous
+                    )
+                )
+                OfflineSyncWorker.enqueueSync(getApplication())
                 _uiState.value = ReportUiState(
                     isSuccess = true,
-                    protectedCaseId = "CASE-84920193",
-                    message = "Report recorded locally. A safety moderator will review it."
+                    protectedCaseId = "QUEUED-OFFLINE",
+                    message = "Saved securely offline. Your report will be automatically transmitted the moment your device reconnects."
+                )
+            } catch (e: Exception) {
+                _uiState.value = ReportUiState(
+                    error = "Failed to store offline report: ${e.localizedMessage}"
                 )
             }
         }

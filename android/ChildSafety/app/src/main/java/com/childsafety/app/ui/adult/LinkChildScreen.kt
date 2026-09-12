@@ -13,6 +13,7 @@ fun LinkChildScreen(
 ) {
     var childId by remember { mutableStateOf("") }
     var selectedRelationship by remember { mutableStateOf("") }
+    var showConsentDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
     val relationships = listOf("Mother", "Father", "Guardian", "Teacher")
@@ -58,11 +59,28 @@ fun LinkChildScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
-            onClick = { showSuccessDialog = true },
+            onClick = {
+                if (childId.isNotBlank()) {
+                    showConsentDialog = true
+                }
+            },
+            enabled = childId.isNotBlank(),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Link Child")
         }
+    }
+
+    if (showConsentDialog) {
+        ParentalConsentDialog(
+            onConsentGranted = {
+                showConsentDialog = false
+                showSuccessDialog = true
+            },
+            onDismiss = {
+                showConsentDialog = false
+            }
+        )
     }
 
     if (showSuccessDialog) {
@@ -72,7 +90,7 @@ fun LinkChildScreen(
                 onNavigateBack()
             },
             title = { Text("Child Linked Successfully") },
-            text = { Text("You will now receive alerts and SOS notifications for this child. Please note that private counseling chats remain confidential for the child's trust.") },
+            text = { Text("DPDP verifiable consent logged. You will now receive alerts and SOS notifications for this child. Private counseling chats remain confidential for the child's psychological safety.") },
             confirmButton = {
                 TextButton(onClick = {
                     showSuccessDialog = false

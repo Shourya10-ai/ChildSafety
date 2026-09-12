@@ -163,6 +163,10 @@ class AuthService:
             
         if payload.get("type") != "access":
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+
+        from app.core.security import is_token_revoked_by_epoch
+        if await is_token_revoked_by_epoch(self.redis, payload.get("iat")):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token revoked due to emergency security re-keying")
             
         user_id = payload.get("sub")
         if not user_id:

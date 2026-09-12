@@ -17,6 +17,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import com.childsafety.app.data.local.db.OfflineQueueDao
+import com.childsafety.app.data.local.db.QueuedSosEntity
+import com.childsafety.app.worker.OfflineSyncWorker
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
@@ -25,7 +28,8 @@ import kotlin.coroutines.resume
 @HiltViewModel
 class SosViewModel @Inject constructor(
     application: Application,
-    private val sosApi: SosApi
+    private val sosApi: SosApi,
+    private val offlineQueueDao: OfflineQueueDao
 ) : AndroidViewModel(application) {
 
     private val _isCountdownActive = MutableStateFlow(false)
@@ -101,7 +105,21 @@ class SosViewModel @Inject constructor(
                     _statusMessage.value = "Failed to trigger SOS: ${response.code()}"
                 }
             } catch (e: Exception) {
-                _statusMessage.value = "Network error triggering SOS: ${e.localizedMessage}"
+                try {
+                    offlineQueueDao.insertQueuedSos(
+                        QueuedSosEntity(
+                            childId = null,
+                            latitude = lat,
+                            longitude = lng,
+                            accuracy = 10.0f,
+                            message = "🚨 EMERGENCY SOS: Queued offline alert"
+                        )
+                    )
+                    OfflineSyncWorker.enqueueSync(getApplication())
+                    _statusMessage.value = "⚠️ OFFLINE: Emergency beacon queued locally. Will dispatch immediately upon network reconnection."
+                } catch (dbErr: Exception) {
+                    _statusMessage.value = "Network error triggering SOS: ${e.localizedMessage}"
+                }
             } finally {
                 _isLoading.value = false
             }

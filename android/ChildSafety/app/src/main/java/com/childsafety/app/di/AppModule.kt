@@ -3,6 +3,8 @@ package com.childsafety.app.di
 import android.content.Context
 import androidx.room.Room
 import com.childsafety.app.data.local.db.AppDatabase
+import com.childsafety.app.data.local.db.OfflineQueueDao
+import com.childsafety.app.data.local.db.UserDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,10 +23,16 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "child_safety_db"
-        ).build()
+        )
+        .fallbackToDestructiveMigration()
+        .build()
     }
 
     @Provides
     @Singleton
-    fun provideUserDao(database: AppDatabase) = database.userDao()
+    fun provideUserDao(database: AppDatabase): UserDao = database.userDao()
+
+    @Provides
+    @Singleton
+    fun provideOfflineQueueDao(database: AppDatabase): OfflineQueueDao = database.offlineQueueDao()
 }

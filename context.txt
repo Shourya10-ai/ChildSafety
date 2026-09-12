@@ -731,6 +731,50 @@ SECTION 14: PROGRESS LOG
 
              Next: Phase 7 — AI Safety Pipeline: Cyberbullying, Grooming & Content Moderation
 
+[2026-09-12] ARCHITECTURE GUARDRAILS & SCOPE REFINEMENTS COMPLETE
+             Backend:
+             - Human-in-the-Loop Case State Machine:
+               * CaseStatus expanded: DRAFT, PENDING_TRIAGE, AI_FLAGGED, PENDING_HUMAN_REVIEW, MODERATOR_CONFIRMED, FALSE_POSITIVE_DISMISSED, OPEN, INVESTIGATING, RESOLVED, ESCALATED, CLOSED.
+               * Enforced case_service transition gate: AI flags cannot escalate to legal/authorities without prior human moderator confirmation (HTTP 403 Forbidden). Moderator confirmation requires statutory justification; dismissal logs audit note for threshold recalibration.
+               * POST /api/v1/cases/{id}/transition endpoint implemented.
+             - Abuse Prevention & Rate Limiting:
+               * Redis sliding-window token bucket in core/rate_limiter.py (burst 2/min, 5/hr per IP/fingerprint).
+               * Content SHA-256 deduplication: throttles identical repeated reports within 15 minutes.
+               * Protected /api/v1/reports and /api/v1/sos/trigger endpoints.
+             - Cryptographic Evidence Chain-of-Custody (Section 63 BSA 2023 / 65B IEA):
+               * models/chain_of_custody.py: EvidenceChainOfCustody block-linked ledger with sequence number, prior block hash, payload hash, block hash, and HMAC-SHA256 digital signature.
+               * verify_evidence_chain_of_custody mathematically validates hash chain from genesis block.
+               * GET /api/v1/evidence/{id}/verify-custody endpoint.
+             - DPDP Act 2023 Parental Consent Engine:
+               * models/parental_consent.py & schemas/parental_consent.py for Section 9 verifiable consent.
+               * consent_service & /api/v1/consent endpoints for recording and verifying active parental consent.
+             - Centralized WebSocket Gateway via Redis Pub/Sub:
+               * core/websocket_manager.py: ConnectionManager multiplexing user & role sockets with Redis Pub/Sub (cs:emergency, cs:broadcast, cs:user:*).
+               * api/v1/ws.py: Unified WebSocket endpoint (/api/v1/ws) with JWT query authentication and heartbeat.
+             - Platform Incident Response Plan:
+               * core/security.py: Added token iat claims and emergency_revoke_all_tokens (global token epoch in Redis).
+               * docs/INCIDENT_RESPONSE_PLAN.md: Documented CERT-In 6-hour reporting protocol, severity matrix (P1-P4), key rotation, and forensic memory freeze.
+
+             AI Server:
+             - Tightly Grounded Retrieval-Only RAG for Moderator Co-Pilot:
+               * Curated statutory corpus: POCSO Act 2012 (Sec 11, 12, 19, 21), Bharatiya Nyaya Sanhita 2023 (Sec 78, 79, 351), IT Act 2000 (Sec 67B), Juvenile Justice Act 2015.
+               * Extractive retrieval with zero free generation (temperature=0), mandatory bracketed citations ([POCSO Act, Sec X]), and statutory grounding confidence score.
+
+             Android:
+             - Offline-First Mobile Support (Room + WorkManager):
+               * QueuedReportEntity & QueuedSosEntity in Room database (AppDatabase version 2).
+               * OfflineQueueDao for managing local distress queues.
+               * OfflineSyncWorker: Background WorkManager worker with NetworkType.CONNECTED constraint.
+               * ReportViewModel & SosViewModel: Enqueues locally and displays reassuring offline state when connectivity is interrupted.
+             - Parental Consent UI:
+               * ParentalConsentDialog: Displays Section 9 DPDP Act 2023 privacy guarantees and requires affirmative affirmation.
+               * Integrated into LinkChildScreen before child profile pairing.
+
+             Automated Verification:
+             - backend/tests/test_architecture_guardrails.py passing 100%.
+
+             Next: Phase 7 — AI Safety Pipeline: Cyberbullying, Grooming & Content Moderation
+
 ================================================================================
 END OF CONTEXT
 ================================================================================

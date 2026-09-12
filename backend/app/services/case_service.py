@@ -6,7 +6,7 @@ from fastapi import HTTPException, status
 from app.models.case import Case, ModeratorNote, Incident
 from app.models.moderator import Moderator, Assignment
 from app.models.escalation import Escalation
-from app.schemas.case import CaseCreate, CaseUpdate
+from app.schemas.case import CaseCreate, CaseUpdate, CaseStatus
 from app.schemas.moderator import ModeratorNoteCreate, EscalationCreate
 from app.core.security import generate_protected_case_id
 
@@ -227,3 +227,74 @@ async def escalate_case(
     await db.commit()
     await db.refresh(escalation)
     return escalation
+
+async def transition_case_status(
+    db: AsyncSession,
+    case_id: uuid.UUID,
+    to_status: CaseStatus,
+    reason: str,
+    actor_id: Optional[uuid.UUID] = None,
+    actor_role: str = "moderator",
+    statutory_reference: Optional[str] = None,
+    dismissal_category: Optional[str] = None
+) -> Case:
+    case = await get_case_by_id(db, case_id)
+    if not case:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Case not found")
+
+    current_status = case.status
+
+    # Rule 1: Human-in-the-loop escalation guard:
+    # Cannot escalate to legal/authorities directly from unreviewed AI flag
+    if to_status == CaseStatus.ESCALATED:
+        if current_status in [CaseStatus.AI_FLAGGED.value, CaseStatus.PENDING_HUMAN_REVIEW.value]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Human-in-the-Loop Violation: AI-flagged cases cannot be escalated to authorities without prior human moderator confirmation."
+            )
+        if actor_role not in ["moderator", "authority", "admin"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Statutory escalation requires certified human moderator or authority credentials."
+            )
+
+    # Rule 2: AI Flag gate:
+    # If case is AI_FLAGGED or PENDING_HUMAN_REVIEW, it can only transition to MODERATOR_CONFIRMED or FALSE_POSITIVE_DISMISSED
+    if current_status in [CaseStatus.AI_FLAGGED.value, CaseStatus.PENDING_HUMAN_REVIEW.value]:
+        if to_status not in [CaseStatus.MODERATOR_CONFIRMED, CaseStatus.FALSE_POSITIVE_DISMISSED]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid transition from '{current_status}'. Must be confirmed or dismissed by a human moderator."
+            )
+
+    # If confirmed by moderator, attach verification note
+    if to_status == CaseStatus.MODERATOR_CONFIRMED:
+        note_text = f"Moderator confirmed risk flag. Rationale: {reason}"
+        if statutory_reference:
+            note_text += f" | Statutory Basis: {statutory_reference}"
+        if actor_id:
+            db.add(ModeratorNote(
+                case_id=case.id,
+                moderator_id=actor_id,
+                content=note_text,
+                note_type="verification"
+            ))
+
+    # If dismissed as false positive, attach audit note
+    if to_status == CaseStatus.FALSE_POSITIVE_DISMISSED:
+        audit_text = f"False positive dismissed. Reason: {reason}"
+        if dismissal_category:
+            audit_text += f" | Category: {dismissal_category}"
+        if actor_id:
+            db.add(ModeratorNote(
+                case_id=case.id,
+                moderator_id=actor_id,
+                content=audit_text,
+                note_type="audit"
+            ))
+
+    case.status = to_status.value
+    await db.commit()
+    await db.refresh(case)
+    return case
+

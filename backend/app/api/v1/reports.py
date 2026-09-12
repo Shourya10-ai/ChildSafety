@@ -1,9 +1,11 @@
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
+import redis.asyncio as redis
 from app.core.dependencies import get_db, get_redis, require_roles
+from app.core.rate_limiter import check_anonymous_report_rate_limit
 from app.models.user import User
 from app.schemas.report import ReportCreate, ReportOut, ReportSubmissionResponse
 from app.services import report_service
@@ -28,14 +30,24 @@ async def get_optional_current_user(
 @router.post("/", response_model=ReportSubmissionResponse, status_code=status.HTTP_201_CREATED)
 async def submit_safety_report(
     data: ReportCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
+    redis_client: redis.Redis = Depends(get_redis),
     optional_user: Optional[User] = Depends(get_optional_current_user)
 ):
     """
     Submits a child safety report. Can be anonymous or authenticated.
+    Protected by Redis sliding-window rate limiter & content hash deduplication.
     Automatically triages the report, creates an incident, attaches to the child's active case,
     and assigns a persistent moderator.
     """
+    # Rate limit check (especially for anonymous submissions)
+    await check_anonymous_report_rate_limit(
+        request=request,
+        redis_client=redis_client,
+        content=data.details or data.category,
+        category=data.category
+    )
     reporter_id = optional_user.id if optional_user else None
     reporter_role = optional_user.role if optional_user else "child"
     return await report_service.submit_report(

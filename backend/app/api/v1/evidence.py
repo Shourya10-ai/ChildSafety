@@ -26,5 +26,19 @@ async def upload_evidence(
         file=file,
         incident_id=incident_id,
         report_id=report_id,
-        uploader_user_id=current_user.id
+        uploader_user_id=current_user.id,
+        uploader_role=current_user.role
     )
+
+@router.get("/{id}/verify-custody")
+async def verify_chain_of_custody(
+    id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Verifies mathematical SHA-256 block-linked integrity of evidence chain of custody
+    under Section 63 Bharatiya Sakshya Adhiniyam, 2023.
+    """
+    return await evidence_service.verify_evidence_chain_of_custody(db, id)
+

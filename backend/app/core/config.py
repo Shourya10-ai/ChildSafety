@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     MINIO_BUCKET: str = "childsafety-evidence"
     
     JWT_SECRET_KEY: str = "childsafety_dev_secret_key_at_least_32_chars_2024"
+    SECRET_KEY: str = "childsafety_dev_secret_key_at_least_32_chars_2024"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7

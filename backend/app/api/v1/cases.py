@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import get_db, get_current_active_user, require_roles
 from app.models.user import User
 from app.models.moderator import Moderator
-from app.schemas.case import CaseCreate, CaseUpdate, CaseOut, CaseDetailOut
+from app.schemas.case import CaseCreate, CaseUpdate, CaseOut, CaseDetailOut, CaseTransitionRequest
 from app.schemas.moderator import ModeratorNoteCreate, ModeratorNoteOut, EscalationCreate, EscalationOut
 from app.services import case_service
 from app.services import incident_service
@@ -148,3 +148,26 @@ async def escalate(
         await db.refresh(moderator)
 
     return await case_service.escalate_case(db, id, moderator.id, data)
+
+@router.post("/{id}/transition", response_model=CaseOut)
+async def transition_case(
+    id: uuid.UUID,
+    data: CaseTransitionRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles("moderator", "admin", "authority"))
+):
+    res = await db.execute(select(Moderator).where(Moderator.user_id == current_user.id))
+    moderator = res.scalar_one_or_none()
+    moderator_id = moderator.id if moderator else None
+
+    return await case_service.transition_case_status(
+        db=db,
+        case_id=id,
+        to_status=data.to_status,
+        reason=data.reason,
+        actor_id=moderator_id,
+        actor_role=current_user.role,
+        statutory_reference=data.statutory_reference,
+        dismissal_category=data.dismissal_category
+    )
+

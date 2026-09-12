@@ -5,11 +5,32 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 class CaseStatus(str, Enum):
+    DRAFT = "draft"
+    PENDING_TRIAGE = "pending_triage"
+    AI_FLAGGED = "ai_flagged"
+    PENDING_HUMAN_REVIEW = "pending_human_review"
+    MODERATOR_CONFIRMED = "moderator_confirmed"
+    FALSE_POSITIVE_DISMISSED = "false_positive_dismissed"
     OPEN = "open"
     INVESTIGATING = "investigating"
     RESOLVED = "resolved"
     ESCALATED = "escalated"
     CLOSED = "closed"
+
+class CaseTransitionRequest(BaseModel):
+    to_status: CaseStatus
+    reason: str
+    statutory_reference: Optional[str] = None  # e.g., "POCSO Act Section 11", "BNS Section 79"
+    dismissal_category: Optional[str] = None   # e.g., "PEER_BANTER", "SARCASTIC_CONTEXT", "FALSE_ALARM"
+
+class CaseTransitionOut(BaseModel):
+    case_id: uuid.UUID
+    from_status: str
+    to_status: str
+    actor_id: Optional[uuid.UUID] = None
+    actor_role: str
+    transitioned_at: datetime
+    reason: str
 
 class CasePriority(str, Enum):
     LOW = "low"
