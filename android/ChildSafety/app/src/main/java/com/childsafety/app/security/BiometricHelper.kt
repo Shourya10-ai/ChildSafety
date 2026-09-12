@@ -1,5 +1,6 @@
 package com.childsafety.app.security
 
+import android.content.Context
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -8,8 +9,8 @@ import javax.inject.Inject
 
 class BiometricHelper @Inject constructor() {
 
-    fun isBiometricAvailable(activity: FragmentActivity): Boolean {
-        val biometricManager = BiometricManager.from(activity)
+    fun isBiometricAvailable(context: Context): Boolean {
+        val biometricManager = BiometricManager.from(context)
         return biometricManager.canAuthenticate(
             BiometricManager.Authenticators.BIOMETRIC_STRONG or
             BiometricManager.Authenticators.DEVICE_CREDENTIAL

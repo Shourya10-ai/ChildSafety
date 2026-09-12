@@ -1,5 +1,7 @@
 package com.childsafety.app.ui.adult
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,18 +12,30 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-
-data class Contact(val name: String, val phone: String, val isPrimary: Boolean)
+import androidx.room.Room
+import com.childsafety.app.data.local.db.AppDatabase
+import com.childsafety.app.data.local.db.EmergencyContactEntity
+import kotlinx.coroutines.launch
 
 @Composable
 fun EmergencyContactsScreen() {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    
+    val db = remember { 
+        Room.databaseBuilder(
+            context.applicationContext,
+            AppDatabase::class.java,
+            "child_safety_db"
+        ).fallbackToDestructiveMigration().build()
+    }
+    
+    val dao = db.emergencyContactDao()
+    val contacts by dao.getAllContacts().collectAsState(initial = emptyList())
+
     var showDialog by remember { mutableStateOf(false) }
-    var contacts by remember { mutableStateOf(listOf(
-        Contact("Police", "112", true),
-        Contact("Childline", "1098", true),
-        Contact("Mom", "555-0102", false)
-    )) }
 
     Scaffold(
         floatingActionButton = {
@@ -52,7 +66,10 @@ fun EmergencyContactsScreen() {
                                 Text("Primary", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                         }
-                        IconButton(onClick = { /* Quick Dial */ }) {
+                        IconButton(onClick = {
+                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${contact.phone}"))
+                            context.startActivity(intent)
+                        }) {
                             Icon(Icons.Filled.Call, contentDescription = "Dial", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
@@ -82,7 +99,9 @@ fun EmergencyContactsScreen() {
             confirmButton = {
                 TextButton(onClick = {
                     if (newName.isNotBlank() && newPhone.isNotBlank()) {
-                        contacts = contacts + Contact(newName, newPhone, newPrimary)
+                        coroutineScope.launch {
+                            dao.insertContact(EmergencyContactEntity(name = newName, phone = newPhone, isPrimary = newPrimary))
+                        }
                         showDialog = false
                     }
                 }) {

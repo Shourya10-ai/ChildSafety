@@ -10,6 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import com.childsafety.app.data.local.datastore.AppPreferences
 
 @Composable
 fun SessionLockDialog(
@@ -18,6 +20,10 @@ fun SessionLockDialog(
 ) {
     var pin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf(false) }
+    
+    val context = LocalContext.current
+    val appPreferences = remember { AppPreferences(context) }
+    val storedPin by appPreferences.childPin.collectAsState(initial = null)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -46,7 +52,8 @@ fun SessionLockDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                if (pin == "1234") { // Mock validation
+                val validPin = storedPin ?: "1234"
+                if (pin == validPin) {
                     onUnlock()
                 } else {
                     error = true

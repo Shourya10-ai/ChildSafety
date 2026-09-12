@@ -5,16 +5,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LinkChildScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: LinkChildViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+    
     var childId by remember { mutableStateOf("") }
     var selectedRelationship by remember { mutableStateOf("") }
     var showConsentDialog by remember { mutableStateOf(false) }
-    var showSuccessDialog by remember { mutableStateOf(false) }
 
     val relationships = listOf("Mother", "Father", "Guardian", "Teacher")
 
@@ -58,13 +61,21 @@ fun LinkChildScreen(
 
         Spacer(modifier = Modifier.weight(1f))
 
+        if (uiState is LinkChildState.Loading) {
+            CircularProgressIndicator()
+        }
+
+        if (uiState is LinkChildState.Error) {
+            Text("Error: ${(uiState as LinkChildState.Error).message}", color = MaterialTheme.colorScheme.error)
+        }
+
         Button(
             onClick = {
-                if (childId.isNotBlank()) {
+                if (childId.isNotBlank() && selectedRelationship.isNotBlank()) {
                     showConsentDialog = true
                 }
             },
-            enabled = childId.isNotBlank(),
+            enabled = childId.isNotBlank() && selectedRelationship.isNotBlank() && uiState !is LinkChildState.Loading,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Link Child")
@@ -75,7 +86,7 @@ fun LinkChildScreen(
         ParentalConsentDialog(
             onConsentGranted = {
                 showConsentDialog = false
-                showSuccessDialog = true
+                viewModel.linkChild(childId, selectedRelationship)
             },
             onDismiss = {
                 showConsentDialog = false
@@ -83,17 +94,15 @@ fun LinkChildScreen(
         )
     }
 
-    if (showSuccessDialog) {
+    if (uiState is LinkChildState.Success) {
         AlertDialog(
             onDismissRequest = {
-                showSuccessDialog = false
                 onNavigateBack()
             },
             title = { Text("Child Linked Successfully") },
-            text = { Text("DPDP verifiable consent logged. You will now receive alerts and SOS notifications for this child. Private counseling chats remain confidential for the child's psychological safety.") },
+            text = { Text("DPDP verifiable consent logged. You will now receive alerts and SOS notifications for this child. Child ID: ${(uiState as LinkChildState.Success).childId}. Private counseling chats remain confidential for the child's psychological safety.") },
             confirmButton = {
                 TextButton(onClick = {
-                    showSuccessDialog = false
                     onNavigateBack()
                 }) {
                     Text("OK")

@@ -35,13 +35,20 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
-def require_roles(*roles: str):
+def require_roles(*roles):
     """Dependency factory: require user to have one of the specified roles."""
+    # Flatten in case a list is passed as single argument
+    flat_roles = []
+    for r in roles:
+        if isinstance(r, (list, tuple, set)):
+            flat_roles.extend(r)
+        else:
+            flat_roles.append(r)
     async def role_checker(current_user: User = Depends(get_current_active_user)) -> User:
-        if current_user.role not in roles:
+        if current_user.role not in flat_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied. Required roles: {', '.join(roles)}"
+                detail=f"Access denied. Required roles: {', '.join(flat_roles)}"
             )
         return current_user
     return role_checker

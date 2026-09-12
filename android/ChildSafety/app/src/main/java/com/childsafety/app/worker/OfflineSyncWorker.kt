@@ -13,6 +13,7 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import com.childsafety.app.security.TokenManager
 
 class OfflineSyncWorker(
     context: Context,
@@ -29,11 +30,25 @@ class OfflineSyncWorker(
 
         val offlineDao = db.offlineQueueDao()
 
+        val tokenManager = TokenManager(appContext)
+        val token = tokenManager.getAccessToken()
+
         // Build standalone client for background work
         val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val requestBuilder = chain.request().newBuilder()
+                requestBuilder.addHeader("ngrok-skip-browser-warning", "1")
+                if (token != null) {
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
+                }
+                chain.proceed(requestBuilder.build())
+            }
+            .build()
+            
         val retrofit = Retrofit.Builder()
-            .baseUrl("http://10.147.167.171:8000/")
-            .client(OkHttpClient.Builder().build())
+            .baseUrl("https://squishier-clunky-neuter.ngrok-free.dev/")
+            .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
 

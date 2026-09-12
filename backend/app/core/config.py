@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     
     AI_SERVER_URL: str = ""
     IDENTITY_VAULT_KEY: str = "CHANGE_ME_IDENTITY_VAULT_KEY_32CH"
+    CORS_ORIGINS: list[str] = ["*"]
 
     model_config = ConfigDict(env_file=".env", extra="ignore")
 

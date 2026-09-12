@@ -8,13 +8,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChildSettingsScreen(
     onExitChildMode: () -> Unit,
     onQuickStealthExit: () -> Unit = onExitChildMode,
-    onNavigateToDpdpRights: () -> Unit = {}
+    onNavigateToDpdpRights: () -> Unit = {},
+    viewModel: ChildSettingsViewModel = hiltViewModel()
 ) {
     var selectedLanguage by remember { mutableStateOf("English") }
     val languages = listOf("English", "Hindi")
@@ -22,7 +24,8 @@ fun ChildSettingsScreen(
     var nomineeIdentifier by remember { mutableStateOf("") }
     var nomineeRelationship by remember { mutableStateOf("") }
     var nomineeReason by remember { mutableStateOf("") }
-    var nominationSubmittedMessage by remember { mutableStateOf<String?>(null) }
+    
+    val nominateState by viewModel.nominateState.collectAsState()
 
     val scrollState = rememberScrollState()
 
@@ -87,17 +90,29 @@ fun ChildSettingsScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
-                if (nominationSubmittedMessage != null) {
+                if (nominateState is NominateState.Success) {
                     Text(
-                        nominationSubmittedMessage!!,
+                        (nominateState as NominateState.Success).message,
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFF1B5E20)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
+                
+                if (nominateState is NominateState.Error) {
+                    Text(
+                        "Error: ${(nominateState as NominateState.Error).error}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
                 Button(
-                    onClick = { showNominateDialog = true },
+                    onClick = { 
+                        viewModel.resetNominateState()
+                        showNominateDialog = true 
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("+ Nominate Outside Trusted Adult")
@@ -160,19 +175,23 @@ fun ChildSettingsScreen(
                         label = { Text("Confidential Reason (Optional)") },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    if (nominateState is NominateState.Loading) {
+                        CircularProgressIndicator(modifier = Modifier.padding(top = 8.dp))
+                    }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         if (nomineeIdentifier.isNotBlank() && nomineeRelationship.isNotBlank()) {
-                            nominationSubmittedMessage = "✅ Nomination for '${nomineeRelationship}' submitted! Our safety team will vet and approve their access."
+                            viewModel.nominateTrustedAdult(nomineeIdentifier, nomineeRelationship, nomineeReason)
                             showNominateDialog = false
                             nomineeIdentifier = ""
                             nomineeRelationship = ""
                             nomineeReason = ""
                         }
-                    }
+                    },
+                    enabled = nominateState !is NominateState.Loading
                 ) {
                     Text("Submit for Vetting")
                 }

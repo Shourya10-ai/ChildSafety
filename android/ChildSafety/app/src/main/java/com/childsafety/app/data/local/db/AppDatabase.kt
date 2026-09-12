@@ -7,12 +7,14 @@ import androidx.room.RoomDatabase
     entities = [
         UserEntity::class,
         QueuedReportEntity::class,
-        QueuedSosEntity::class
+        QueuedSosEntity::class,
+        EmergencyContactEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun offlineQueueDao(): OfflineQueueDao
+    abstract fun emergencyContactDao(): EmergencyContactDao
 }

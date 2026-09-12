@@ -87,6 +87,23 @@ async def submit_report(
     await db.commit()
     await db.refresh(report)
 
+    # Call AI Server for analysis
+    from app.services.ai_client import ai_client
+    ai_result = await ai_client.analyze_text(text_content)
+    if ai_result:
+        incident.ai_flags = ai_result.get("category_scores", {})
+        incident.risk_score = ai_result.get("composite_risk_score", 0.0)
+        incident.trust_level = "ai_derived"
+        db.add(incident)
+        
+        # Check risk level
+        risk_level = ai_result.get("risk_level", "").upper()
+        if risk_level in ["HIGH", "CRITICAL"]:
+            case.status = "ai_flagged"
+            db.add(case)
+            
+        await db.commit()
+
     return ReportSubmissionResponse(
         report_id=report.id,
         case_id=case.id,
