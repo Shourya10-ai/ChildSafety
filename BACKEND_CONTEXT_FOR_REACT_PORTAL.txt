@@ -865,6 +865,129 @@ All routes are prefixed with: /api/v1/
     Cumulative profile risk assessment across all active cases for child.
     Returns the same RiskEvaluationResponse schema.
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+15. PHASE 11: LEGAL RAG, FORENSIC CASE COPILOT & VOICE REPORTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  A. FORENSIC CASE SUMMARIZATION COPILOT:
+  ─────────────────────────────────────────────────────────────────────────────
+  POST /api/v1/copilot/summarize-case/{case_id}  (Roles: moderator, authority, admin)
+    Generates structured forensic briefing, milestone timeline, suspect dossier,
+    applicable Indian statutory violations, and prioritized tactical action plan:
+    Response: {
+      "case_id": "uuid",
+      "protected_case_id": "CS-2026-5501",
+      "case_title": "Online Extortion & Cyber-Grooming",
+      "case_priority": "critical",
+      "case_status": "INVESTIGATING",
+      "child_protected_id": "C-MH-MUM-4001",
+      "is_domestic_safety_mode": true,
+      "executive_summary": "Case CS-2026-5501 is classified as CRITICAL priority...",
+      "chronological_milestones": [
+        { "timestamp": "2026-09-12 14:00 UTC", "event_type": "INCIDENT_RECORDED", "description": "GROOMING: Unknown user @dark_predator lured child...", "severity": "critical" },
+        { "timestamp": "2026-09-12 14:05 UTC", "event_type": "EVIDENCE_SECURED", "description": "Evidence artifact logged (image): Hash verified under Sec 63 BSA 2023", "severity": "medium" }
+      ],
+      "suspect_profiles": [
+        {
+          "suspect_id": "uuid",
+          "identifier": "@dark_predator",
+          "platform": "Instagram",
+          "risk_level": "CRITICAL",
+          "modus_operandi": "Gaming currency lure followed by coercion",
+          "confidence_score": 0.98
+        }
+      ],
+      "applicable_statutory_provisions": [
+        {
+          "statute_name": "Protection of Children from Sexual Offences (POCSO) Act, 2012",
+          "section": "Section 11 & 12",
+          "title": "Sexual Harassment & Digital Solicitation of a Child",
+          "relevance_summary": "Covers sexual harassment of a child through words...",
+          "mandatory_reporting": true,
+          "reporting_timeline_hours": 24,
+          "reporting_authority": "Special Juvenile Police Unit (SJPU) or Local Police"
+        }
+      ],
+      "recommended_action_plan": [
+        "URGENT: Initiate 15-minute emergency moderator escalation protocol.",
+        "Prepare mandatory SJPU / Local Police referral docket for jurisdiction Mumbai, Maharashtra.",
+        "Issue Section 67B IT Act evidence preservation notice to Instagram for handle @dark_predator.",
+        "Preserve all chat logs and screenshots under BSA 2023."
+      ],
+      "risk_assessment": { "composite_risk_score": 0.88, "threat_tier": "CRITICAL" },
+      "generated_by": "ForensicLegalCopilot-Grounded-v1",
+      "generated_at": "2026-09-12T..."
+    }
+
+  B. ZERO-HALLUCINATION STATUTORY LEGAL RAG COPILOT:
+  ─────────────────────────────────────────────────────────────────────────────
+  POST /api/v1/copilot/statutory-query  (Roles: moderator, authority, admin)
+    Queries verified Indian child protection statutes (POCSO Act, BNS 2023, IT Act, JJ Act, DPDP Act):
+    Body: {
+      "query_text": "Child reported extortion and blackmail on social media, household is hostile",
+      "incident_type": "sextortion",
+      "child_state": "Maharashtra",
+      "child_district": "Mumbai"
+    }
+    Response: {
+      "query": "Child reported extortion...",
+      "grounded_guidance": "Statutory Legal Guidance for query relating to 'sextortion':\n- BNS 2023 Sec 351...",
+      "statutory_citations": [ ... ],
+      "mandatory_reporting_required": true,
+      "reporting_authority": "District Child Welfare Committee (CWC)",
+      "reporting_timeline_hours": 24,
+      "statutory_grounded": true,
+      "confidence_score": 0.96
+    }
+
+  C. 24/7 CHILD AI SAFETY GUARDIAN:
+  ─────────────────────────────────────────────────────────────────────────────
+  POST /api/v1/copilot/child-safety-chat  (Roles: child, moderator, adult, authority, admin)
+    Empathetic, safe conversational guide with emergency keyword interceptor and 1-tap SOS escalations:
+    Body: {
+      "message": "Someone is blackmailing me saying they will leak my photo"
+    }
+    Response: {
+      "reply": "Thank you for telling me. First, take a deep breath: This is NOT your fault...",
+      "detected_threat": true,
+      "distress_level": "HIGH",
+      "is_emergency": false,
+      "suggest_sos": true,
+      "suggest_moderator_transfer": true,
+      "reassurance_note": "You are safe and nobody has the right to threaten or blackmail you.",
+      "created_at": "2026-09-12T..."
+    }
+
+  D. SPEECH & VOICE REPORTING:
+  ─────────────────────────────────────────────────────────────────────────────
+  POST /api/v1/speech/transcribe  (Multipart Form)
+    file: <audio_file> (.wav, .m4a, .mp3, .ogg, .webm)
+    Response: {
+      "audio_filename": "audio.wav",
+      "duration_seconds": 4.5,
+      "transcript": "An unknown user is sending threats...",
+      "detected_language": "en",
+      "detected_safety_keywords": ["threats", "meet alone"],
+      "detected_threat_level": "HIGH",
+      "confidence_score": 0.92
+    }
+
+  POST /api/v1/speech/voice-report  (Multipart Form)
+    file: <audio_file>
+    platform: "WhatsApp" (optional)
+    category: "stranger_danger" (optional)
+    Response: {
+      "report_id": "uuid",
+      "case_id": "uuid",
+      "protected_case_id": "CASE-89450346",
+      "transcript": "An unknown user is sending threats...",
+      "category": "stranger_danger",
+      "severity": "high",
+      "status": "submitted",
+      "message": "Voice report processed successfully.",
+      "created_at": "2026-09-12T..."
+    }
+
 ================================================================================
   END OF BACKEND CONNECTIVITY CONTEXT
   Full interactive API docs: https://squishier-clunky-neuter.ngrok-free.dev/docs
